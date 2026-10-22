@@ -30,7 +30,7 @@ public sealed class TorrentPagesTests
 
         var html = await anonymous.GetStringAsync(new Uri($"/view/{torrent.Id}", UriKind.Relative));
         StringAssert.Contains(html, "<a rel=\"noopener noreferrer nofollow\" href=\"https://example.com/info\">https://example.com/info</a>");
-        StringAssert.Contains(html, $"href=\"/view/{torrent.Id}/magnet\"");
+        StringAssert.Contains(html, $"href=\"magnet:?xt=urn:btih:{torrent.InfoHashHex}&amp;");
         StringAssert.Contains(html, "File list is not available for this torrent.");
         Assert.IsFalse(html.Contains("fa-pencil", StringComparison.Ordinal), "anonymous can't edit");
         Assert.IsFalse(html.Contains("comment-box", StringComparison.Ordinal), "anonymous can't comment");
