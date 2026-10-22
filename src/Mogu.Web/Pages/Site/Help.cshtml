@@ -1,0 +1,111 @@
+@page "/help"
+@model Mogu.Web.Pages.Site.StaticPageModel
+@{
+    ViewData["Title"] = $"Help :: {SiteOptions.Value.SiteName}";
+}
+
+
+<h1>Using the Site</h1>
+
+<h3 id="torrent-colors">Torrent Colors<a class="header-anchor" href="#torrent-colors"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	<span style="color:green; font-weight: bold;">Green</span> entries (trusted) are:
+	<ul>
+		<li>Torrents uploaded by trusted users.</li>
+	</ul>
+	<span style="color:red; font-weight: bold;">Red</span> entries (remake) are torrents that match any of the following:
+	<ul>
+		<li>Reencode of original release.</li>
+		<li>Remux of another uploader's original release for hardsubbing and/or fixing purposes.</li>
+		<li>Reupload of original release using non-original file names.</li>
+		<li>Reupload of original release with missing and/or unrelated additional files.</li>
+	</ul>
+	<span style="color:orange; font-weight: bold;">Orange</span> entries are:
+	<ul>
+		<li>Batches of completed series.</li>
+	</ul>
+	<span style="color:grey; font-weight: bold;">Grey</span> entries are:
+	<ul>
+		<li>Hidden torrents.</li>
+	</ul>
+</div>
+
+<h3 id="using-search">Using the Search Engine<a class="header-anchor" href="#using-search"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	Search results can be filtered by category, remake, trusted, and users.
+	The results can be further sorted by size, date, seeders, leechers, completed count, and comment count.
+</div>
+<div>
+	You can combine search terms with the <kbd>|</kbd> operator, such as
+	<kbd>foo|bar</kbd>, to match any of the words instead all of them.
+</div>
+<div>
+	To exclude results matching a certain word, prefix them with <kbd>-</kbd>,
+	e.g. <kbd>foo -bar</kbd>, which will return torrents with <em>foo</em> in the
+	name, but not those which have <em>bar</em> in the name as well.
+</div>
+<div>
+	If you want to search for a several-word expression (substring) in its entirety, you can
+	surround searches with <kbd>"</kbd> (double quotes), such as
+	<kbd>"foo bar"</kbd>, which would match torrents named <em>foo bar</em> but not
+	those named <em>bar foo</em>. You may also use the aforementioned <kbd>|</kbd> to group
+	phrases together: <kbd>"foo bar"|"foo baz"</kbd>. You can negate the entire
+	group with <kbd>-</kbd> (e.g. <kbd>-"foo bar"|"foo baz"</kbd>), but not single items.
+</div>
+<div>
+	You can also use <kbd>(</kbd> and <kbd>)</kbd> to signify precedence, but quoted strings do
+	not honor this. Using <kbd>(hello world) "foo bar"</kbd> is fine, but quoted strings inside
+	the parentheses will lead to unexpected results.
+</div>
+
+<h3 id="reporting">Reporting Torrents<a class="header-anchor" href="#reporting"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	If you find a torrent that breaks the rules, click the
+	<button type="button" class="btn btn-xs btn-danger">Report</button> button to the right
+	of the torrent's information page. Then, enter a reason for your report in the
+	dialog that opens, and hit the <button type="button" class="btn btn-xs btn-danger">
+	Report</button> button to confirm.
+</div>
+
+<h3 id="styling">Styling Descriptions and Comments<a class="header-anchor" href="#styling"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	You can style your comments and your torrent's description using
+	<a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">Markdown</a>.
+	This includes adding images or linking to external websites.
+</div>
+<div>
+	To link to an external site, use <kbd>[label](https://example.com)</kbd>
+	where the text in the <kbd>[]</kbd> square brackets is the shown text of your
+	link, and the URL in the <kbd>()</kbd> parentheses is the URL your link will
+	point to.
+</div>
+<div>
+	Embedding an image is similar. Use <kbd>![alt text](https://example.com/image.jpg)</kbd>
+	to have an image embedded in your comment or description. Note the <kbd>!</kbd>
+	exclamation mark at the beginning, denoting that this link is an image.
+</div>
+
+<h3 id="avatar">Changing Your User's Avatar<a class="header-anchor" href="#avatar"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	The site uses the <a href="https://www.gravatar.com">Gravatar</a> service for user avatars.
+	Check out <a href="https://www.gravatar.com/support/">Gravatar's help section</a> for more detailed instructions.
+</div>
+
+<h3 id="delete">Deleting Your Torrent<a class="header-anchor" href="#delete"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	If you wish to delete one of your torrents, navigate to the torrent's page,
+	click the Edit (<i class="fa fa-fw fa-pencil"></i>) icon on the top left,
+	scroll down and hit the <button type="button" class="btn btn-xs btn-danger">Delete</button>
+	button.
+</div>
+
+<h3 id="trusted">Getting Trusted Status<a class="header-anchor" href="#trusted"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	At the moment we have no established process for granting trusted status to users
+	who did not previously have it. If and when we establish such a process it will be announced.
+</div>
+
+<h3 id="discord">Discord<a class="header-anchor" href="#discord"><i class="fa fa-link" aria-hidden="true"></i></a></h3>
+<div>
+	<p>You can join us on <a href="https://discord.holopirates.moe">Discord</a>! Make sure to read the rules upon joining to avoid getting banned.</p>
+</div>

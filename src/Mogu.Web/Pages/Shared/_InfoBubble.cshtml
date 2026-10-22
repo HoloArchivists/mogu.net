@@ -1,0 +1,19 @@
+@* Dismissable announcement above the front page listing (old infobubble.html).
+   Set infoTimestamp to a larger Unix timestamp whenever the announcement changes; 0 disables it. *@
+@{
+    long infoTimestamp = 0;
+}
+@if (infoTimestamp > 0)
+{
+<div class="alert alert-info alert-dismissible" id="infobubble" data-ts="@infoTimestamp" hidden>
+	<strong>Put your announcements into <tt>_InfoBubble.cshtml</tt>!</strong>
+	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+	</button>
+</div>
+<noscript>
+<div class="alert alert-info" id="infobubble-noscript">
+	<strong>Put your announcements into <tt>_InfoBubble.cshtml</tt>!</strong>
+</div>
+</noscript>
+}

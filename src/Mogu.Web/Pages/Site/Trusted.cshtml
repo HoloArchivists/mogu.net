@@ -1,0 +1,14 @@
+@page "/trusted"
+@model Mogu.Web.Pages.Site.StaticPageModel
+@{
+    ViewData["Title"] = $"Trusted :: {SiteOptions.Value.SiteName}";
+}
+@* Trusted applications were removed: trust is granted through Discord roles, so there is no request button. *@
+
+<div class="content">
+	<div class="row">
+		<div class="col-md-12">
+			<h1>Trusted rules go here</h1>
+		</div>
+	</div>
+</div>
