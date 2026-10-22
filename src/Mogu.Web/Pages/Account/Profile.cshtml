@@ -1,0 +1,90 @@
+@page "/profile"
+@model Mogu.Web.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = $"Edit Profile :: {SiteOptions.Value.SiteName}";
+    var user = Model.ProfileUser;
+    var preferencesActive = Model.ActiveTab != "api";
+}
+
+<h2 style="margin-bottom: 20px;">Profile of <strong class="text-@user.LevelColor">@user.Username</strong></h2>
+
+<div class="row" style="margin-bottom: 20px;">
+	<div class="col-sm-2" style="max-width: 150px;">
+		<img class="avatar" src="/static/img/avatar/default.png">
+	</div>
+	<div class="col-sm-10">
+		<dl class="row" style="margin: 20px 0 15px 0;">
+			<dt class="col-sm-2">User ID:</dt><dd class="col-sm-10">@user.Id</dd>
+			<dt class="col-sm-2">User Class:</dt><dd class="col-sm-10">@user.LevelTitle</dd>
+			<dt class="col-sm-2">User Created on:</dt><dd class="col-sm-10">@Format.MinutesUtc(user.CreatedAt)</dd>
+		</dl>
+	</div>
+</div>
+
+<ul class="nav nav-tabs" id="profileTabs" role="tablist">
+	<li role="presentation" class="@(preferencesActive ? "active" : null)">
+		<a href="#preferences-change" id="preferences-change-tab" role="tab" data-toggle="tab" aria-controls="profile" aria-expanded="@(preferencesActive ? "true" : "false")">Preferences</a>
+	</li>
+	<li role="presentation" class="@(preferencesActive ? null : "active")">
+		<a href="#api-token" id="api-token-tab" role="tab" data-toggle="tab" aria-controls="profile" aria-expanded="@(preferencesActive ? "false" : "true")">API token</a>
+	</li>
+</ul>
+
+<div class="tab-content">
+	<div class="tab-pane fade @(preferencesActive ? "active in" : null)" role="tabpanel" id="preferences-change" aria-labelledby="preferences-change-tab">
+		<form method="post" asp-page-handler="Settings">
+				<div class="row">
+					<div class="form-group col-md-4">
+						<input checked="@user.HideComments" id="hide_comments" name="hide_comments" type="checkbox" value="true">
+						<label for="hide_comments">Hide comments by default</label>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-4">
+						<input class="btn btn-primary" id="submit_settings" name="submit_settings" type="submit" value="Update">
+					</div>
+				</div>
+		</form>
+	</div>
+	<div class="tab-pane fade @(preferencesActive ? null : "active in")" role="tabpanel" id="api-token" aria-labelledby="api-token-tab">
+		<div class="row">
+			<div class="col-md-8">
+				<p>
+					An API token lets upload scripts act on your behalf. Send it as
+					<kbd>Authorization: Bearer &lt;token&gt;</kbd>, or as the password of HTTP Basic authentication
+					with your username (e.g. <kbd>api_uploader_v2.py -u @user.Username -p &lt;token&gt;</kbd>).
+				</p>
+				@if (Model.NewApiToken is { } token)
+				{
+				<div class="alert alert-success" role="alert">
+					<p><strong>Your new API token:</strong> copy it now, it will not be shown again.</p>
+					<input class="form-control" id="api_token" readonly type="text" value="@token" onclick="this.select()">
+				</div>
+				}
+				else if (user.ApiTokenHash is not null)
+				{
+				<p>You have an API token. Regenerating it invalidates the current one.</p>
+				}
+				else
+				{
+				<p>You don't have an API token.</p>
+				}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-8">
+				<form method="post" asp-page-handler="GenerateToken" style="display: inline-block;">
+					<input class="btn btn-primary" id="generate_token" type="submit" value="@(user.ApiTokenHash is null ? "Generate token" : "Regenerate token")">
+				</form>
+				@if (user.ApiTokenHash is not null)
+				{
+				<form method="post" asp-page-handler="RevokeToken" style="display: inline-block;">
+					<input class="btn btn-danger" id="revoke_token" type="submit" value="Revoke token">
+				</form>
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+<hr>

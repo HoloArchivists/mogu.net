@@ -1,4 +1,6 @@
+using Mogu.Web.Api;
 using Mogu.Web.Services;
+using Mogu.Web.Torrents;
 using Mogu.Web.Tracker;
 
 namespace Mogu.Web.Infrastructure;
@@ -9,6 +11,13 @@ public static class ServiceRegistration
     public static IServiceCollection AddMoguServices(this IServiceCollection services)
     {
         services.AddMemoryCache();
+
+        // Torrent pipeline: magnet links, .torrent downloads, uploads and the API.
+        services.AddSingleton<TorrentLinks>();
+        services.AddScoped<TorrentFileService>();
+        services.AddScoped<TorrentUploadService>();
+        services.AddScoped<ApiTokenService>();
+
         services.AddScoped<ModerationService>();
         services.AddScoped<TorrentFileListRenderer>();
         services.AddMoguTracker();
@@ -17,6 +26,8 @@ public static class ServiceRegistration
 
     public static IEndpointRouteBuilder MapMoguEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapDownloadEndpoints();
+        endpoints.MapApiEndpoints();
         endpoints.MapTrackerEndpoints();
         return endpoints;
     }
