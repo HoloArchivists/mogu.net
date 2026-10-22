@@ -42,6 +42,16 @@ public sealed class MoguOptions
     /// <summary>Extra trackers appended to every generated torrent and magnet link.</summary>
     public List<string> DefaultTrackers { get; set; } = [];
 
+    /// <summary>
+    /// Trackers that are never put in generated .torrent files or magnet links and are stripped from new
+    /// uploads (case-insensitive exact match), e.g. dead trackers still referenced by old torrents.
+    /// </summary>
+    public List<string> TrackerBlacklist { get; set; } = [];
+
+    /// <summary>True when <paramref name="uri"/> is in <see cref="TrackerBlacklist"/>.</summary>
+    public bool IsBlacklistedTracker(string uri) =>
+        TrackerBlacklist.Exists(t => string.Equals(t.Trim(), uri.Trim(), StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Maximum number of trackers put in magnet links.</summary>
     [Range(0, 100)]
     public int MagnetMaxTrackers { get; set; } = 5;
