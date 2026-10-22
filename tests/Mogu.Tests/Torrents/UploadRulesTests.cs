@@ -1,3 +1,4 @@
+using Mogu.Core.Text;
 using Mogu.Core.Torrents;
 
 namespace Mogu.Tests.Torrents;
@@ -8,14 +9,14 @@ public sealed class UploadRulesTests
     [TestMethod]
     public void SanitizeReplacesXmlIllegalCharacters()
     {
-        Assert.AreEqual("a\uFFFDb\tc\nd\re\uFFFD\uFFFD", UploadRules.Sanitize("a\u0001b\tc\nd\re\u001f\uFFFE"));
+        Assert.AreEqual("a\uFFFDb\tc\nd\re\uFFFD\uFFFD", TextSanitizer.SanitizeString("a\u0001b\tc\nd\re\u001f\uFFFE"));
     }
 
     [TestMethod]
     public void SanitizeKeepsSurrogatePairsButNotLoneSurrogates()
     {
-        Assert.AreEqual("\U0001F363 ok", UploadRules.Sanitize("\U0001F363 ok"));
-        Assert.AreEqual("x\uFFFDy\uFFFD", UploadRules.Sanitize("x\uD800y\uDC00"));
+        Assert.AreEqual("\U0001F363 ok", TextSanitizer.SanitizeString("\U0001F363 ok"));
+        Assert.AreEqual("x\uFFFDy\uFFFD", TextSanitizer.SanitizeString("x\uD800y\uDC00"));
     }
 
     [TestMethod]

@@ -20,39 +20,6 @@ public static class UploadRules
 
     private static readonly SearchValues<char> BlacklistedCharacters = SearchValues.Create(CharacterBlacklist);
 
-    /// <summary>
-    /// Replaces characters that are illegal in XML (and so would break RSS) with U+FFFD:
-    /// C0 controls other than tab/LF/CR, unpaired surrogates, U+FFFE and U+FFFF.
-    /// </summary>
-    public static string Sanitize(string value, char replacement = '\uFFFD')
-    {
-        StringBuilder? builder = null;
-        for (var i = 0; i < value.Length; i++)
-        {
-            var c = value[i];
-            if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
-            {
-                builder?.Append(c).Append(value[i + 1]);
-                i++;
-                continue;
-            }
-
-            var illegal = c is (>= '\x00' and <= '\x08') or '\x0b' or '\x0c' or (>= '\x0e' and <= '\x1f') or '\uFFFE' or '\uFFFF'
-                || char.IsSurrogate(c);
-            if (illegal)
-            {
-                builder ??= new StringBuilder(value, 0, i, value.Length);
-                builder.Append(replacement);
-            }
-            else
-            {
-                builder?.Append(c);
-            }
-        }
-
-        return builder?.ToString() ?? value;
-    }
-
     /// <summary>False if any directory or file name is a reserved name or contains a blacklisted character.</summary>
     public static bool AreFilenamesAllowed(IEnumerable<string> names) =>
         !names.Any(name =>

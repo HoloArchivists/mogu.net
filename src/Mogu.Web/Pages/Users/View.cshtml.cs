@@ -12,7 +12,7 @@ namespace Mogu.Web.Pages.Users;
 /// A user's torrents plus the moderator panel (old <c>users.view_user</c>, <c>nuke_user_torrents</c>
 /// and <c>nuke_user_comments</c>). Each panel form posts to its own handler.
 /// </summary>
-public sealed class UserPageModel(MoguDbContext db, TorrentSearch search, TimeProvider time) : MoguPageModel
+public sealed class UserPageModel(MoguDbContext db, TorrentSearch search, ModerationService moderation, TimeProvider time) : MoguPageModel
 {
     public const string NonsenseMessage = "What the fuck are you doing?";
 
@@ -112,13 +112,13 @@ public sealed class UserPageModel(MoguDbContext db, TorrentSearch search, TimePr
         if (level != Profile.Level)
         {
             Profile.Level = level;
-            Log(admin, $"[{Profile.Username}]({ProfileUrl}) changed to {UserClass} user", now);
+            moderation.AddAdminLog(admin, $"[{Profile.Username}]({ProfileUrl}) changed to {UserClass} user");
         }
 
         if (ActivateUser is not null && !Profile.IsBanned && Profile.Status != UserStatus.Active)
         {
             Profile.Status = UserStatus.Active;
-            Log(admin, $"[{Profile.Username}]({ProfileUrl}) was manually activated", now);
+            moderation.AddAdminLog(admin, $"[{Profile.Username}]({ProfileUrl}) was manually activated");
             Flash(FlashLevel.Success, $"{Profile.Username} was manually activated");
         }
 
@@ -201,7 +201,7 @@ public sealed class UserPageModel(MoguDbContext db, TorrentSearch search, TimePr
             db.Bans.Add(ban);
         }
 
-        Log(admin, $"User {userText} has been {action}.", now);
+        moderation.AddAdminLog(admin, $"User {userText} has been {action}.");
         await db.SaveChangesAsync(cancellationToken);
 
         Flash(FlashLevel.Success, $"User has been successfully {action}.");
@@ -270,6 +270,4 @@ public sealed class UserPageModel(MoguDbContext db, TorrentSearch search, TimePr
         return Page();
     }
 
-    private void Log(User admin, string message, DateTime now) =>
-        db.AdminLog.Add(new AdminLogEntry { AdminId = admin.Id, Message = message, CreatedAt = now });
 }

@@ -1,3 +1,4 @@
+using Mogu.Core.Text;
 using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -250,10 +251,10 @@ public sealed partial class TorrentUploadService(
         {
             Id = id ?? 0,
             InfoHash = metadata.InfoHash,
-            DisplayName = UploadRules.Sanitize(string.IsNullOrEmpty(displayName) ? metadata.Name.Trim() : displayName),
+            DisplayName = TextSanitizer.SanitizeString(string.IsNullOrEmpty(displayName) ? metadata.Name.Trim() : displayName),
             TorrentName = UploadRules.BaseName(request.FileName),
-            Information = UploadRules.Sanitize((request.Information ?? "").Trim()),
-            Description = UploadRules.Sanitize((request.Description ?? "").Trim()),
+            Information = TextSanitizer.SanitizeString((request.Information ?? "").Trim()),
+            Description = TextSanitizer.SanitizeString((request.Description ?? "").Trim()),
             Encoding = metadata.Encoding,
             FileSize = metadata.TotalSize,
             UploaderId = uploader?.Id,

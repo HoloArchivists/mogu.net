@@ -1,3 +1,4 @@
+using Mogu.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mogu.Core.Data;
@@ -10,7 +11,7 @@ namespace Mogu.Web.Pages.Users;
 /// The "nuke" buttons of the user page, at their old URLs <c>/user/{name}/nuke/torrents</c> and
 /// <c>/user/{name}/nuke/comments</c> (the route's handler segment selects the handler). Administrators only.
 /// </summary>
-public sealed class NukeModel(MoguDbContext db, TimeProvider time) : MoguPageModel
+public sealed class NukeModel(MoguDbContext db, ModerationService moderation) : MoguPageModel
 {
     public IActionResult OnGet() => NotFound();
 
@@ -37,7 +38,10 @@ public sealed class NukeModel(MoguDbContext db, TimeProvider time) : MoguPageMod
                 .SetProperty(t => t.SeedCount, 0)
                 .SetProperty(t => t.LeechCount, 0),
             cancellationToken);
-        db.TrackerWhitelistEvents.AddRange(infoHashes.Select(h => new TrackerWhitelistEvent { InfoHash = h, Action = TrackerWhitelistAction.Remove }));
+        foreach (var infoHash in infoHashes)
+        {
+            moderation.QueueTrackerWhitelist(infoHash, TrackerWhitelistAction.Remove);
+        }
         if (infoHashes.Count > 0)
         {
             Log($"Nuked {infoHashes.Count} torrents of [{user.Username}]({UserUrl(user)})");
@@ -85,10 +89,5 @@ public sealed class NukeModel(MoguDbContext db, TimeProvider time) : MoguPageMod
 
     private static string UserUrl(User user) => $"/user/{Uri.EscapeDataString(user.Username)}";
 
-    private void Log(string message) => db.AdminLog.Add(new AdminLogEntry
-    {
-        AdminId = CurrentUser.Id!.Value,
-        Message = message,
-        CreatedAt = time.GetUtcNow().UtcDateTime,
-    });
+    private void Log(string message) => moderation.AddAdminLog(CurrentUser.User!, message);
 }
