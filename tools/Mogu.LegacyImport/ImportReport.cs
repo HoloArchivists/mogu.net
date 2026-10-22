@@ -25,6 +25,9 @@ public sealed class ImportReport
     /// <summary>Torrents without a <c>{id}.*</c> backup file (null if not checked).</summary>
     public List<int>? MissingTorrentBackups { get; set; }
 
+    /// <summary>Info dicts re-extracted from .torrent backups, keyed by hex info hash.</summary>
+    public Dictionary<string, byte[]> RecoveredInfoDicts { get; } = new(StringComparer.Ordinal);
+
     public int InfoDictFilesCopied { get; set; }
 
     public int TorrentFilesCopied { get; set; }
@@ -62,6 +65,7 @@ public sealed class ImportReport
         writer.WriteLine(MissingInfoDicts is null
             ? "Info dicts: not checked (no --info-dicts/--data-dir)"
             : string.Create(c, $"Info dicts missing for has_torrent torrents: {MissingInfoDicts.Count}{IdList(MissingInfoDicts)}"));
+        writer.WriteLine(string.Create(c, $"Info dicts recovered from .torrent backups: {RecoveredInfoDicts.Count}"));
         writer.WriteLine(MissingTorrentBackups is null
             ? "Torrent backups: not checked (no --torrents)"
             : string.Create(c, $"Torrents without a backup .torrent file: {MissingTorrentBackups.Count}{IdList(MissingTorrentBackups)}"));

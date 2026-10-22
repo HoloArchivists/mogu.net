@@ -304,6 +304,41 @@ public sealed class LegacyImporterTests
     }
 
     [TestMethod]
+    public async Task RecoversMissingInfoDictsFromTorrentBackups()
+    {
+        using var legacy = CreateSeeded();
+        var info = new Mogu.Core.Torrents.BencodeDictionary
+        {
+            ["length"] = 5L,
+            ["name"] = "a.txt"u8.ToArray(),
+            ["piece length"] = 16384L,
+            ["pieces"] = new byte[20],
+        };
+        var infoBytes = Mogu.Core.Torrents.Bencode.Encode(info);
+#pragma warning disable CA5350
+        var hex = Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(infoBytes));
+#pragma warning restore CA5350
+        legacy.Execute($"""
+            UPDATE nyaa_torrents SET info_hash = x'{hex}' WHERE id = 5
+            """);
+        var oldInfoDicts = legacy.Sub("old/info_dicts");
+        var oldTorrents = legacy.Sub("old/torrents");
+        var dataDir = legacy.Sub("data");
+        Directory.CreateDirectory(oldInfoDicts);
+        Directory.CreateDirectory(oldTorrents);
+        // Only the info dict's bytes matter for the hash; the rest of the .torrent can be anything.
+        var backup = "d8:announce3:url4:info"u8.ToArray().Concat(infoBytes).Append((byte)'e').ToArray();
+        await File.WriteAllBytesAsync(Path.Combine(oldTorrents, "5.second.torrent"), backup);
+        await File.WriteAllTextAsync(Path.Combine(oldTorrents, "1.first.torrent"), "not bencode");
+
+        var report = await RunAsync(legacy, "--data-dir", dataDir, "--info-dicts", oldInfoDicts, "--torrents", oldTorrents);
+
+        Assert.AreEqual(1, report.RecoveredInfoDicts.Count, string.Join(",", report.MissingInfoDicts!));
+        CollectionAssert.AreEqual(new[] { 1 }, report.MissingInfoDicts);
+        CollectionAssert.AreEqual(infoBytes, await File.ReadAllBytesAsync(Path.Combine(dataDir, "info_dicts", hex[..2], hex[2..4], hex)));
+    }
+
+    [TestMethod]
     public async Task ReportsMissingInfoDictsWithoutChangingHasTorrentByDefault()
     {
         using var legacy = CreateSeeded();

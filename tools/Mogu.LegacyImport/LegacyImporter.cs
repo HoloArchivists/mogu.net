@@ -1,10 +1,12 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Mogu.Core.Data;
 using Mogu.Core.Entities;
+using Mogu.Core.Torrents;
 
 namespace Mogu.LegacyImport;
 
@@ -513,22 +515,6 @@ public static class LegacyImporter
             throw new DirectoryNotFoundException($"--info-dicts directory not found: {options.InfoDictsDirectory}");
         }
 
-        if (infoDicts is not null)
-        {
-            report.MissingInfoDicts = torrents
-                .Where(t => t.HasTorrent && !File.Exists(InfoDictPath(infoDicts, t.InfoHashHex)))
-                .Select(t => t.Id)
-                .ToList();
-            if (options.MarkMissingTorrents)
-            {
-                var missing = report.MissingInfoDicts.ToHashSet();
-                foreach (var torrent in torrents.Where(t => missing.Contains(t.Id)))
-                {
-                    torrent.HasTorrent = false;
-                }
-            }
-        }
-
         var backups = options.TorrentsDirectory
             ?? (options.DataDirectory is null ? null : Path.Combine(options.DataDirectory, "torrents"));
         if (options.TorrentsDirectory is not null && !Directory.Exists(options.TorrentsDirectory))
@@ -543,6 +529,63 @@ public static class LegacyImporter
                 .Select(prefix => int.TryParse(prefix, NumberStyles.None, CultureInfo.InvariantCulture, out var id) ? id : 0)
                 .ToHashSet();
             report.MissingTorrentBackups = torrents.Where(t => !present.Contains(t.Id)).Select(t => t.Id).ToList();
+        }
+
+        if (infoDicts is not null)
+        {
+            var missing = torrents.Where(t => t.HasTorrent && !File.Exists(InfoDictPath(infoDicts, t.InfoHashHex))).ToList();
+            if (backups is not null && Directory.Exists(backups))
+            {
+                RecoverInfoDicts(missing, backups, report);
+            }
+
+            report.MissingInfoDicts = missing.Where(t => !report.RecoveredInfoDicts.ContainsKey(t.InfoHashHex)).Select(t => t.Id).ToList();
+            if (options.MarkMissingTorrents)
+            {
+                var stillMissing = report.MissingInfoDicts.ToHashSet();
+                foreach (var torrent in torrents.Where(t => stillMissing.Contains(t.Id)))
+                {
+                    torrent.HasTorrent = false;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The old site lost the info dicts of some torrents, but kept the uploaded .torrent. Re-extract the
+    /// info dict from <c>{id}.*</c> backups, accepting it only if it hashes to the torrent's info hash.
+    /// </summary>
+    private static void RecoverInfoDicts(List<Torrent> missing, string backups, ImportReport report)
+    {
+        var files = Directory.EnumerateFiles(backups)
+            .Select(f => (Path: f, Prefix: Path.GetFileName(f).Split('.', 2)[0]))
+            .Where(f => int.TryParse(f.Prefix, NumberStyles.None, CultureInfo.InvariantCulture, out _))
+            .GroupBy(f => int.Parse(f.Prefix, NumberStyles.None, CultureInfo.InvariantCulture))
+            .ToDictionary(g => g.Key, g => g.Select(f => f.Path).ToList());
+
+        foreach (var torrent in missing)
+        {
+            foreach (var file in files.GetValueOrDefault(torrent.Id) ?? [])
+            {
+                try
+                {
+                    if (Bencode.Decode(File.ReadAllBytes(file), allowTrailingData: true) is BencodeDictionary root
+                        && root.TryGetValue("info", out var info))
+                    {
+                        var encoded = Bencode.Encode(info);
+#pragma warning disable CA5350 // BitTorrent v1 info hashes are SHA-1 by definition.
+                        if (SHA1.HashData(encoded).AsSpan().SequenceEqual(torrent.InfoHash))
+#pragma warning restore CA5350
+                        {
+                            report.RecoveredInfoDicts[torrent.InfoHashHex] = encoded;
+                            break;
+                        }
+                    }
+                }
+                catch (BencodeException)
+                {
+                }
+            }
         }
     }
 
@@ -563,6 +606,13 @@ public static class LegacyImporter
         {
             log.WriteLine($"Copying torrent backups to {options.DataDirectory}");
             report.TorrentFilesCopied = CopyDirectory(options.TorrentsDirectory, Path.Combine(options.DataDirectory, "torrents"));
+        }
+
+        foreach (var (hex, infoDict) in report.RecoveredInfoDicts)
+        {
+            var path = InfoDictPath(Path.Combine(options.DataDirectory, "info_dicts"), hex);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllBytes(path, infoDict);
         }
     }
 
