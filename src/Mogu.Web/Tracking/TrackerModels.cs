@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 public enum TrackerEvent
 {

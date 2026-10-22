@@ -1,6 +1,26 @@
-@page "/"
+@page "/{feed:regex(^rss$)?}"
 @model IndexModel
 @{
-    ViewData["Title"] = $"Browse :: {SiteOptions.Value.SiteName}";
+    var siteName = SiteOptions.Value.SiteName;
+    var term = Model.Search?.Term;
+    ViewData["Title"] = string.IsNullOrEmpty(term) ? $"Browse :: {siteName}" : $"{term} :: {siteName}";
 }
-<h3>No results found</h3>
+@section Metatags {
+@if (!string.IsNullOrEmpty(term))
+{
+<meta property="og:description" content="Search for '@term'">
+}
+else
+{
+<meta name="description" content="A BitTorrent community focused on Eastern Asian media including anime, manga, music, and more">
+<meta name="keywords" content="torrents, bittorrent, torrent, anime, manga, sukebei, download, nyaa, magnet, magnets">
+<meta property="og:description" content="@siteName homepage">
+}
+}
+
+@if (string.IsNullOrEmpty(term))
+{
+<partial name="_InfoBubble" />
+}
+
+<partial name="_SearchResults" model="Model.Results" />

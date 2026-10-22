@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Mogu.Core.Data;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 public static class TrackerEndpoints
 {

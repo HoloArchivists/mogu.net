@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Options;
 using Mogu.Core.Options;
-using Mogu.Web.Tracker;
+using Mogu.Web.Tracking;
 using static Mogu.Tests.Tracker.TrackerTestBencode;
 
 namespace Mogu.Tests.Tracker;

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Mogu.Core.Data;
 using Mogu.Core.Entities;
-using Mogu.Web.Tracker;
+using Mogu.Web.Tracking;
 using static Mogu.Tests.Tracker.TrackerTestBencode;
 
 namespace Mogu.Tests.Tracker;

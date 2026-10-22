@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>Works out which announce URL generated .torrent files and magnet links should lead with.</summary>
 public static class TrackerAnnounceUrl

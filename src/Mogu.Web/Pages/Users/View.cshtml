@@ -1,0 +1,210 @@
+@page "/user/{username}/{handler:regex(^(UserClass|Ban)$)?}"
+@model Mogu.Web.Pages.Users.UserPageModel
+@{
+    var site = SiteOptions.Value;
+    var user = Model.Profile;
+    var viewer = CurrentUser.User;
+    var term = Model.Search?.Term;
+    var userUrl = "/user/" + Uri.EscapeDataString(user.Username);
+    ViewData["Title"] = $"{user.Username} :: {site.SiteName}";
+    var userClassErrors = ViewData.ModelState.ErrorsFor("user_class");
+    var reasonErrors = ViewData.ModelState.ErrorsFor("reason");
+}
+@section Metatags {
+@if (!string.IsNullOrEmpty(term))
+{
+<meta property="og:description" content="Search for '@term' in torrents uploaded by @user.Username">
+}
+else
+{
+<meta property="og:description" content="Torrents uploaded by @user.Username">
+}
+}
+
+@if (viewer is not null && viewer.IsModerator)
+{
+	<h2>User Information</h2><br>
+	<div class="row" style="margin-bottom: 20px;">
+		<div class="col-md-2" style="max-width: 150px;">
+			<img class="avatar" src="/static/img/avatar/default.png">
+			<a href="@userUrl/comments">View all comments</a>
+		</div>
+		<div class="col-md-4">
+			<div class="row">
+				<div class="col-md-12">
+					<dl class="dl-horizontal">
+						<dt>User ID:</dt>
+						<dd>@user.Id</dd>
+						<dt>Account created on:</dt>
+						<dd data-timestamp="@Format.UnixSeconds(user.CreatedAt)">@Format.MinutesUtc(user.CreatedAt)</dd>
+						<dt>Discord ID:</dt>
+						<dd>@user.DiscordId</dd>
+						<dt>User class:</dt>
+						<dd>@user.LevelTitle</dd>
+						<dt>User status:</dt>
+						<dd>@user.Status</dd>
+						@if (viewer.IsAdministrator)
+						{
+						<dt>Last login IP:</dt>
+						<dd>@user.LastLoginIp</dd>
+						<dt>Registration IP:</dt>
+						<dd>@user.RegistrationIp</dd>
+						}
+					</dl>
+				</div>
+			</div>
+			@if (Model.CanManage)
+			{
+			<form method="post" asp-page-handler="UserClass">
+				<div class="row">
+					<div class="col-md-6">
+						<div class="form-group@(userClassErrors.Count > 0 ? " has-error" : "")">
+							<label class="control-label" for="user_class">Change User Class</label>
+							<div class="input-group input-group-sm">
+								<select class="form-control" id="user_class" name="user_class" title="">
+									@foreach (var (value, label) in Model.UserClassChoices)
+									{
+									<option value="@value" selected="@(Model.UserClass == value)">@label</option>
+									}
+								</select>
+								<div class="input-group-btn">
+									<button type="submit" class="btn btn-primary">Apply</button>
+								</div>
+							</div>
+							<partial name="_FieldErrors" model="userClassErrors" />
+						</div>
+					</div>
+				</div>
+				@if (user.Status != UserStatus.Active)
+				{
+				<div class="row">
+					<div class="col-md-6">
+						<input class="btn btn-primary" id="activate_user" name="activate_user" type="submit" value="Activate User">
+					</div>
+				</div>
+				}
+			</form>
+			<br>
+			}
+		</div>
+		@if (Model.CanManage)
+		{
+		<div class="col-md-5">
+			<div class="panel panel-danger">
+				<div class="panel-heading">
+					<h3 class="panel-title">Danger Zone</h3>
+				</div>
+				<div class="panel-body">
+					<form method="post" asp-page-handler="Ban">
+						<div class="row">
+							<div class="col-md-12">
+								@if (user.IsBanned)
+								{
+								<text>This user is <strong>banned</strong>.</text>
+								}
+								@if (Model.IsIpBanned)
+								{
+								<text>This user is <strong>ip banned</strong>.</text>
+								}
+								@if (!user.IsBanned && Model.Bans.Count == 0)
+								{
+								<text>This user is <strong>not banned</strong>.</text>
+								}
+							</div>
+						</div>
+						@if (user.IsBanned || Model.Bans.Count > 0)
+						{
+						<div class="row">
+							<div class="col-md-12">
+								<ul>
+									@foreach (var ban in Model.Bans)
+									{
+									<li>#@ban.Id
+									by <a href="/user/@Uri.EscapeDataString(ban.Admin.Username)">@ban.Admin.Username</a>
+									for <span markdown-text-inline>@ban.Reason</span></li>
+									}
+								</ul>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<input class="btn btn-info" id="unban" name="unban" type="submit" value="Unban">
+							</div>
+						</div>
+						}
+
+						@if (!user.IsBanned || !Model.IsIpBanned)
+						{
+						if (user.IsBanned || Model.Bans.Count > 0)
+						{
+						<hr>
+						}
+						<div class="row" style="margin-top:1.5em">
+							<div class="col-md-12">
+								<div class="form-group@(reasonErrors.Count > 0 ? " has-error" : "")">
+									<label class="control-label" for="reason">Ban Reason</label>
+									<textarea class="form-control" id="reason" name="reason" placeholder="Specify a ban reason." title="">@Model.Reason</textarea>
+									<partial name="_FieldErrors" model="reasonErrors" />
+								</div><br>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 text-left">
+								@if (!user.IsBanned)
+								{
+								<input class="btn btn-danger" id="ban_user" name="ban_user" type="submit" value="Ban User">
+								}
+								else
+								{
+								<button type="button" class="btn btn-danger disabled">Already banned</button>
+								}
+							</div>
+							<div class="col-md-6 text-right">
+								@if (!Model.IsIpBanned)
+								{
+								<input class="btn btn-danger" id="ban_userip" name="ban_userip" type="submit" value="Ban User+IP">
+								}
+								else
+								{
+								<button type="button" class="btn btn-danger disabled">Already IP banned</button>
+								}
+							</div>
+						</div>
+						}
+					</form>
+					@if (viewer.IsAdministrator)
+					{
+					var confirmName = System.Text.Json.JsonSerializer.Serialize(user.Username);
+					var confirmPrompt = System.Text.Json.JsonSerializer.Serialize($"Please type {user.Username} to confirm");
+					<hr>
+					<form method="post" action="@userUrl/nuke/torrents" onsubmit="return prompt(@confirmPrompt) == @confirmName">
+						@Html.AntiForgeryToken()
+						<div class="row">
+							<div class="col-md-6 text-left">
+								<input class="btn btn-danger" formaction="@userUrl/nuke/torrents" id="nuke_torrents" name="nuke_torrents" type="submit" value="&#x1F4A3; Nuke Torrents">
+							</div>
+							<div class="col-md-6 text-right">
+								<input class="btn btn-danger" formaction="@userUrl/nuke/comments" id="nuke_comments" name="nuke_comments" type="submit" value="&#x1F4A3; Nuke Comments">
+							</div>
+						</div>
+					</form>
+					}
+				</div>
+			</div>
+		</div>
+		}
+	</div>
+}
+
+<div class="row">
+	<h3>
+		Browsing <span class="text-@user.LevelColor" data-toggle="tooltip" title="@user.LevelTitle">@user.Username</span>'@(user.Username.EndsWith('s') ? "" : "s") torrents
+		@if (string.IsNullOrEmpty(term))
+		{
+		<text> (@Model.ActualCount)</text>
+		}
+	</h3>
+
+<partial name="_SearchResults" model="Model.Results" />
+
+</div>

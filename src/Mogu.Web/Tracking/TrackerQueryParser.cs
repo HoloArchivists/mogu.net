@@ -4,7 +4,7 @@ using System.Net;
 using System.Text;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>
 /// Parses tracker query strings from the raw (still percent-encoded) query, because <c>info_hash</c> and

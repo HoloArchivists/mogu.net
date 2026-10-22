@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Options;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 public interface ITrackerPeerStore
 {

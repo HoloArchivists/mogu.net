@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>Drops peers that stopped announcing.</summary>
 public sealed class TrackerPeerPruningService(

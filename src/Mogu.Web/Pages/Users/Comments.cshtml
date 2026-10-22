@@ -1,0 +1,64 @@
+@page "/user/{username}/comments"
+@model Mogu.Web.Pages.Users.UserCommentsModel
+@{
+    var user = Model.Profile;
+    var userUrl = "/user/" + Uri.EscapeDataString(user.Username);
+    ViewData["Title"] = $"Comments made by {user.Username} :: {SiteOptions.Value.SiteName}";
+    var index = 0;
+}
+@section Metatags {
+<meta property="og:description" content="Comments made by @user.Username">
+}
+
+<h3>
+	<span class="text-@user.LevelColor" data-toggle="tooltip" title="@user.LevelTitle">@user.Username</span>'@(user.Username.EndsWith('s') ? "" : "s") comments
+</h3>
+
+@if (Model.Comments.Items.Count > 0)
+{
+<div id="comments" class="panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">
+			Total of @Model.Comments.TotalCount comments
+		</h3>
+	</div>
+	@foreach (var comment in Model.Comments.Items)
+	{
+		index++;
+	<div class="panel panel-default comment-panel">
+		<div class="panel-body">
+			<div class="col-md-2">
+				<p>
+					<a class="text-@user.LevelColor" href="@userUrl" data-toggle="tooltip" title="@user.LevelTitle">@user.Username</a>
+				</p>
+				<img class="avatar" src="/static/img/avatar/default.png" alt="@user.LevelTitle">
+			</div>
+			<div class="col-md-10 comment">
+				<div class="row comment-details">
+					<a href="#com-@index"><small data-timestamp-swap data-timestamp="@Format.UnixSeconds(comment.CreatedAt)">@Format.MinutesUtc(comment.CreatedAt)</small></a>
+					@if (comment.EditedAt is DateTime edited)
+					{
+					<small data-timestamp-swap data-timestamp-title data-timestamp="@Format.UnixSeconds(edited)" title="@Format.MinutesUtc(edited)">(edited)</small>
+					}
+					<small>on torrent <a href="/view/@comment.TorrentId">#@comment.TorrentId <i>@comment.TorrentName</i></a></small>
+				</div>
+				<div class="row">
+					@* HTML encoding turns newlines into &#xA; entities, which survive proxies that strip blank lines. *@
+					<div markdown-text class="comment-content" id="torrent-comment@(comment.Id)">@comment.Text.ReplaceLineEndings("\n")</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	}
+</div>
+
+}
+else
+{
+<h3>No comments</h3>
+}
+
+<div class="center">
+	<partial name="_Pagination" model="Model.Comments" />
+</div>

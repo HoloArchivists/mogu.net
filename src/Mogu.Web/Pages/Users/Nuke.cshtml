@@ -1,0 +1,3 @@
+@page "/user/{username}/nuke/{handler:regex(^(torrents|comments)$)}"
+@model Mogu.Web.Pages.Users.NukeModel
+@* POST only; GET requests get a 404 from OnGet. *@

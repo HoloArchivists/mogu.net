@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>
 /// Minimal forward-only bencode writer for tracker responses. Callers must write dictionary keys in

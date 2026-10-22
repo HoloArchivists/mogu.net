@@ -5,7 +5,7 @@ using Mogu.Core.Data;
 using Mogu.Core.Entities;
 using Mogu.Core.Options;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>Info hashes the tracker accepts: torrents in the database that aren't banned.</summary>
 public interface ITrackerWhitelist

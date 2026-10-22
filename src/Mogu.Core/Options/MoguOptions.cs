@@ -90,6 +90,12 @@ public sealed class MoguOptions
     public string? CommitHash { get; set; }
 
     public string SourceRepositoryUrl { get; set; } = "https://github.com/HoloArchivists/mogu";
+
+    /// <summary>Host of the work-safe site, named on the rules page (old <c>EXTERNAL_URLS['main']</c>).</summary>
+    public string MainSiteHost { get; set; } = "mogu.holopirates.moe";
+
+    /// <summary>Host of the non-work-safe sister site, named on the rules page (old <c>EXTERNAL_URLS['fap']</c>).</summary>
+    public string NsfwSiteHost { get; set; } = "yabe.holopirates.moe";
 }
 
 public sealed class StickyTorrent

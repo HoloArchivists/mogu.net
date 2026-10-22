@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Mogu.Core.Data;
 
-namespace Mogu.Web.Tracker;
+namespace Mogu.Web.Tracking;
 
 /// <summary>Persists swarm counts and completions from the peer store into <see cref="Core.Entities.Torrent"/>.</summary>
 public sealed class TrackerStatsWriter(

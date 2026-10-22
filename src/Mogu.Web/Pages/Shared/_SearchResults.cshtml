@@ -1,0 +1,96 @@
+@* Torrent listing table, same markup as the old search_results.html. *@
+@using Mogu.Web.Services
+@model SearchResultsModel
+@{
+    var site = SiteOptions.Value;
+    var search = Model.Search;
+
+    void Header(string headerClass, string headerStyle, string inner, bool centerText = false, string? sortKey = null, string? headerTitle = null)
+    {
+        var classSuffix = sortKey is not null && search.Sort == sortKey ? "_" + search.Order : "";
+        var classes = new[] { headerClass, sortKey is null ? null : "sorting" + classSuffix, centerText ? "text-center" : null }
+            .Where(c => !string.IsNullOrEmpty(c));
+        var href = sortKey is null ? null : Context.Request.ModifyQuery(("s", sortKey), ("o", classSuffix == "_desc" ? "asc" : "desc"));
+        <th class="@string.Join(' ', classes)" title="@headerTitle" style="@headerStyle">@if (href is not null) {<a href="@href"></a>}@Html.Raw(inner)</th>
+    }
+}
+@if (Model.FirstWordUserName is not null)
+{
+    var userQuery = Context.Request.ModifyQuery(("q", Model.QuerySansUser));
+    userQuery = userQuery[(Context.Request.PathBase + Context.Request.Path).Value!.Length..];
+<div class="alert alert-info">
+	<a href="/user/@Uri.EscapeDataString(Model.FirstWordUserName)@userQuery">Click here to see only results uploaded by @Model.FirstWordUserName</a>
+</div>
+}
+
+@if (Model.Torrents.Items.Count > 0)
+{
+<div class="table-responsive">
+	<table class="table table-bordered table-hover table-striped torrent-list">
+		<thead>
+			<tr>
+				@{ Header("hdr-category", "width:80px;", "Category", centerText: true); }
+				@{ Header("hdr-name", "width:auto;", "Name"); }
+				@{ Header("hdr-comments", "width:50px;", "<i class=\"fa fa-comments-o\"></i>", centerText: true, sortKey: "comments", headerTitle: "Comments"); }
+				@{ Header("hdr-link", "width:70px;", "Link", centerText: true); }
+				@{ Header("hdr-size", "width:100px;", "Size", centerText: true, sortKey: "size"); }
+				@{ Header("hdr-date", "width:140px;", "Date", centerText: true, sortKey: "id", headerTitle: "In UTC"); }
+
+				@if (site.EnableShowStats)
+				{
+				Header("hdr-seeders", "width:50px;", "<i class=\"fa fa-arrow-up\" aria-hidden=\"true\"></i>", centerText: true, sortKey: "seeders", headerTitle: "Seeders");
+				Header("hdr-leechers", "width:50px;", "<i class=\"fa fa-arrow-down\" aria-hidden=\"true\"></i>", centerText: true, sortKey: "leechers", headerTitle: "Leechers");
+				Header("hdr-downloads", "width:50px;", "<i class=\"fa fa-check\" aria-hidden=\"true\"></i>", centerText: true, sortKey: "downloads", headerTitle: "Completed downloads");
+				}
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var torrent in Model.Torrents.Items)
+			{
+				var catId = torrent.CategoryCode;
+				var catName = UrlHelpers.CategoryName(catId);
+				var comCount = torrent.CommentCount;
+			<tr class="@torrent.RowClass">
+				<td>
+					<a href="/?c=@catId" title="@catName">
+					@catName
+					</a>
+				</td>
+				<td colspan="2">
+					@if (comCount > 0)
+					{
+					<a href="/view/@torrent.Id#comments" class="comments" title="@comCount comment@(comCount > 1 ? "s" : "")">
+						<i class="fa fa-comments-o"></i>@comCount</a>
+					}
+					<a href="/view/@torrent.Id" title="@torrent.DisplayName">@torrent.DisplayName</a>
+				</td>
+				<td class="text-center">
+					@if (torrent.HasTorrent)
+					{
+					<a href="/download/@(torrent.Id).torrent"><i class="fa fa-fw fa-download"></i></a>
+					}
+					<a href="@ListingMagnetBuilder.Create(torrent.DisplayName, torrent.InfoHashHex, site)"><i class="fa fa-fw fa-magnet"></i></a>
+				</td>
+				<td class="text-center">@Format.FileSize(torrent.FileSize)</td>
+				<td class="text-center" data-timestamp="@Format.UnixSeconds(torrent.CreatedAt)">@Format.Minutes(torrent.CreatedAt)</td>
+
+				@if (site.EnableShowStats)
+				{
+				<td class="text-center">@torrent.SeedCount</td>
+				<td class="text-center">@torrent.LeechCount</td>
+				<td class="text-center">@torrent.DownloadCount</td>
+				}
+			</tr>
+			}
+		</tbody>
+	</table>
+</div>
+}
+else
+{
+<h3>No results found</h3>
+}
+
+<div class="center">
+	<partial name="_Pagination" model="Model.Torrents" />
+</div>

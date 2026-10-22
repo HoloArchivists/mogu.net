@@ -1,7 +1,7 @@
 using Mogu.Web.Api;
 using Mogu.Web.Services;
 using Mogu.Web.Torrents;
-using Mogu.Web.Tracker;
+using Mogu.Web.Tracking;
 
 namespace Mogu.Web.Infrastructure;
 
@@ -18,6 +18,7 @@ public static class ServiceRegistration
         services.AddScoped<TorrentUploadService>();
         services.AddScoped<ApiTokenService>();
 
+        services.AddScoped<TorrentSearch>();
         services.AddScoped<ModerationService>();
         services.AddScoped<TorrentFileListRenderer>();
         services.AddMoguTracker();
