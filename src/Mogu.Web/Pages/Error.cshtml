@@ -1,0 +1,22 @@
+@page "/Error/{code?}"
+@model ErrorModel
+@{
+    ViewData["Title"] = Model.IsNotFound ? $"404 Not Found :: {SiteOptions.Value.SiteName}" : $"An error has occurred :: {SiteOptions.Value.SiteName}";
+}
+@section Metatags {
+<meta property="og:description" content="Nothing here.">
+}
+@if (Model.IsNotFound)
+{
+<h1>404 Not Found</h1>
+<p>The path you requested does not exist on this server.</p>
+}
+else
+{
+<h1>An error has occurred</h1>
+<p>@Model.Message</p>
+@if (Model.RequestId is not null)
+{
+<p>Please pass along this ID: <kbd>@Model.RequestId</kbd></p>
+}
+}

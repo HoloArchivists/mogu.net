@@ -1,0 +1,318 @@
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@inject IFileVersionProvider FileVersions
+@{
+    var page = ViewContext.ViewData.Model as MoguPageModel;
+    var site = SiteOptions.Value;
+    var title = ViewData["Title"] as string ?? site.SiteName;
+    var search = page?.Search;
+    var userPageName = page?.UserPageName;
+    var searchPlaceholder = userPageName is null ? "Search..." : $"Search {Format.Possessive(userPageName)} torrents...";
+    var searchAction = userPageName is null ? "/" : $"/user/{Uri.EscapeDataString(userPageName)}";
+    var path = Context.Request.Path.Value;
+    var user = CurrentUser.User;
+    string Static(string file) => FileVersions.AddFileVersionToPath(Context.Request.PathBase, "/static/" + file);
+    string? Active(string target) => path == target ? "active" : null;
+    var bootstrapLight = Static("css/bootstrap.min.css");
+    var bootstrapDark = Static("css/bootstrap-dark.min.css");
+    var filters = new[] { ("0", "No filter"), ("1", "No remakes"), ("2", "Trusted only") };
+}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>@title</title>
+
+		<meta name="viewport" content="width=480px">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<link rel="shortcut icon" type="image/png" href="~/static/favicon.png">
+		<link rel="icon" type="image/png" href="~/static/favicon.png">
+		<link rel="mask-icon" href="~/static/pinned-tab.svg" color="#3582F7">
+		<link rel="alternate" type="application/rss+xml" href="@Url.RssUrl(page?.RssFilter, absolute: true)" />
+
+		<meta property="og:site_name" content="@site.SiteName">
+		<meta property="og:title" content="@title">
+		<meta property="og:image" content="@(ViewData["MetaImage"] as string ?? "/static/img/avatar/default.png")">
+		@await RenderSectionAsync("Metatags", required: false)
+
+		<!-- Bootstrap core CSS -->
+		<!--
+			Note: This has been customized at http://getbootstrap.com/customize/ to
+			set the column breakpoint to tablet mode, instead of mobile. This is to
+			make the navbar not look awful on tablets.
+		-->
+		<link href="@bootstrapDark" rel="stylesheet" id="bsThemeLink">
+		<link href="~/static/css/bootstrap-xl-mod.css" asp-append-version="true" rel="stylesheet">
+		<!--
+			This theme changer script needs to be inline and right under the above stylesheet link to prevent FOUC (Flash Of Unstyled Content)
+			Development version is commented out in static/js/main.js at the bottom of the file
+		-->
+		<script>
+            'use strict';
+            function toggleDarkMode() {
+              if ("dark" === localStorage.getItem("theme")) {
+                setThemeLight();
+              } else {
+                setThemeDark();
+              }
+            }
+            function setThemeDark() {
+              bsThemeLink.href = "@bootstrapDark";
+              localStorage.setItem("theme", "dark");
+              if (document.body !== null) {
+                document.body.classList.add("dark");
+              }
+            }
+            function setThemeLight() {
+              bsThemeLink.href = "@bootstrapLight";
+              localStorage.setItem("theme", "light");
+              if (document.body !== null) {
+                document.body.classList.remove("dark");
+              }
+            }
+            if ("undefined" != typeof Storage) {
+              var bsThemeLink = document.getElementById("bsThemeLink");
+              if ("light" === localStorage.getItem("theme")) {
+                setThemeLight();
+              }else{
+                setThemeDark();
+              }
+            }
+        </script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css" integrity="sha256-an4uqLnVJ2flr7w0U74xiF4PJjO2N5Df91R2CUmCLCA=" crossorigin="anonymous" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+		<!-- Custom styles for this template -->
+		<link href="~/static/css/main.css" asp-append-version="true" rel="stylesheet">
+
+		<!-- Core JavaScript -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.3.1/markdown-it.min.js" integrity="sha256-3WZyZQOe+ql3pLo90lrkRtALrlniGdnf//gRpW0UQks=" crossorigin="anonymous"></script>
+		<!-- Modified to not apply border-radius to selectpickers and stuff so our navbar looks cool -->
+		<script src="~/static/js/bootstrap-select.js" asp-append-version="true"></script>
+		<script src="~/static/js/main.js" asp-append-version="true"></script>
+
+		<link rel="search" type="application/opensearchdescription+xml" title="Mogu" href="/static/search.xml">
+	</head>
+	<body>
+		<!-- Fixed navbar -->
+		<nav class="navbar navbar-default navbar-static-top navbar-inverse">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/">@site.SiteName</a>
+				</div><!--/.navbar-header -->
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li class="@Active("/upload")"><a href="/upload">Upload</a></li>
+						@if (site.StickyTorrents.Count > 0)
+						{
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sticky Torrents<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								@foreach (var sticky in site.StickyTorrents)
+								{
+								<li><a href="/view/@sticky.Id">@sticky.Label</a></li>
+								}
+							</ul>
+						</li>
+						}
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								Info
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li class="@Active("/rules")"><a href="/rules">Rules</a></li>
+								<li class="@Active("/help")"><a href="/help">Help</a></li>
+								<li class="@Active("/trusted")"><a href="/trusted">Trusted</a></li>
+							</ul>
+						</li>
+						<li><a href="@Url.RssUrl(page?.RssFilter)">RSS</a></li>
+						@if (CurrentUser.IsModerator)
+						{
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								Admin
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li class="@Active("/admin/reports")"><a href="/admin/reports">Reports</a></li>
+								<li class="@Active("/admin/log")"><a href="/admin/log">Log</a></li>
+								<li class="@Active("/admin/bans")"><a href="/admin/bans">Bans</a></li>
+							</ul>
+						</li>
+						}
+					</ul>
+
+					<ul class="nav navbar-nav navbar-right">
+						@if (user is not null)
+						{
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle visible-lg visible-sm visible-xs" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								<i class="fa fa-user fa-fw"></i>
+								@user.Username
+								<span class="caret"></span>
+							</a>
+							<a href="#" class="dropdown-toggle hidden-lg hidden-sm hidden-xs" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								<i class="fa fa-user fa-fw"></i>
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li class="hidden-lg hidden-sm hidden-xs">
+									<a><i class="fa fa-user fa-fw"></i>Logged in as @user.Username</a>
+								</li>
+								<li class="hidden-lg hidden-sm hidden-xs divider" role="separator">
+
+								</li>
+								<li>
+									<a href="/user/@Uri.EscapeDataString(user.Username)">
+										<i class="fa fa-user fa-fw"></i>
+										Torrents
+									</a>
+								</li>
+								<li>
+									<a href="/profile">
+										<i class="fa fa-gear fa-fw"></i>
+										Profile
+									</a>
+								</li>
+								<li>
+									<a href="/logout">
+										<i class="fa fa-times fa-fw"></i>
+										Logout
+									</a>
+								</li>
+							</ul>
+						</li>
+						}
+						else
+						{
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle visible-lg visible-sm visible-xs" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								<i class="fa fa-user fa-fw"></i>
+								Guest
+								<span class="caret"></span>
+							</a>
+							<a href="#" class="dropdown-toggle hidden-lg hidden-sm hidden-xs" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								<i class="fa fa-user fa-fw"></i>
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li>
+									<a href="/login?next=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)">
+										<i class="fa fa-sign-in fa-fw"></i>
+										Login
+									</a>
+								</li>
+							</ul>
+						</li>
+						}
+					</ul>
+
+					<div class="search-container visible-xs visible-sm">
+						@* The mobile menu *@
+						<form class="navbar-form navbar-right form" action="@searchAction" method="get">
+
+							<input type="text" class="form-control" name="q" placeholder="@searchPlaceholder" value="@search?.Term">
+							<br>
+
+							<select class="form-control" title="Filter" data-width="120px" name="f">
+								@foreach (var (value, label) in filters)
+								{
+								<option value="@value" title="@label" selected="@((search?.QualityFilter ?? "0") == value)">@label</option>
+								}
+							</select>
+
+							<br>
+
+							<select class="form-control" title="Category" data-width="200px" name="c">
+								<option value="0_0" title="All categories" selected="@((search?.Category ?? "0_0") == "0_0")">
+									All categories
+								</option>
+								@foreach (var (code, label, catTitle) in UrlHelpers.CategoryChoices)
+								{
+								<option value="@code" title="@catTitle" selected="@(search?.Category == code)">
+									@label
+								</option>
+								}
+							</select>
+
+							<br>
+
+							<button class="btn btn-primary form-control" type="submit">
+								<i class="fa fa-search fa-fw"></i> Search
+							</button>
+						</form>
+					</div><!--/.search-container -->
+
+					<form class="navbar-form navbar-right form" action="@searchAction" method="get">
+						<div class="input-group search-container hidden-xs hidden-sm">
+							<div class="input-group-btn nav-filter" id="navFilter-criteria">
+								<select class="selectpicker show-tick" title="Filter" data-width="120px" name="f">
+									@foreach (var (value, label) in filters)
+									{
+									<option value="@value" title="@label" selected="@((search?.QualityFilter ?? "0") == value)">@label</option>
+									}
+								</select>
+							</div>
+
+							<div class="input-group-btn nav-filter" id="navFilter-category">
+								<select class="selectpicker show-tick" title="Category" data-width="130px" name="c">
+									<option value="0_0" title="All categories" selected="@((search?.Category ?? "0_0") == "0_0")">
+										All categories
+									</option>
+									@foreach (var (code, label, catTitle) in UrlHelpers.CategoryChoices)
+									{
+									<option value="@code" title="@catTitle" selected="@(search?.Category == code)">
+										@label
+									</option>
+									}
+								</select>
+							</div>
+							<input type="text" class="form-control search-bar" name="q" placeholder="@searchPlaceholder" value="@search?.Term" />
+							<div class="input-group-btn search-btn">
+								<button class="btn btn-primary" type="submit">
+									<i class="fa fa-search fa-fw"></i>
+								</button>
+							</div>
+						</div>
+					</form>
+				</div><!--/.nav-collapse -->
+			</div><!--/.container -->
+		</nav>
+
+		<div class="container">
+			@foreach (var flash in TempData.TakeFlashes())
+			{
+			<div class="alert alert-dismissable alert-@flash.CssClass" role="alert">
+				<button type="button" class="close" data-dismiss="alert">&times;</button>
+				@flash.Render()
+			</div>
+			}
+			@if (site.MaintenanceMode && !string.IsNullOrEmpty(site.MaintenanceModeMessage))
+			{
+			<div class="alert alert-dismissable alert-warning" role="alert">
+				<button type="button" class="close" data-dismiss="alert">&times;</button>
+				@Html.Raw(site.MaintenanceModeMessage)
+			</div>
+			}
+
+			@RenderBody()
+		</div> <!-- /container -->
+
+		<footer style="text-align: center;">
+			<p>Dark Mode: <a href="#" id="themeToggle">Toggle</a></p>
+			@if (!string.IsNullOrEmpty(site.CommitHash))
+			{
+			<p>Commit: <a href="@site.SourceRepositoryUrl/tree/@site.CommitHash">@site.CommitHash[..Math.Min(7, site.CommitHash.Length)]</a></p>
+			}
+		</footer>
+		@await RenderSectionAsync("Scripts", required: false)
+	</body>
+</html>

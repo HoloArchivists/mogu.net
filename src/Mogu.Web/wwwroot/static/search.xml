@@ -1,0 +1,14 @@
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http:/www.mozilla.org/2006/browser/search/">
+<ShortName>Mogu</ShortName>
+
+<Description>Search torrents on Mogu.</Description>
+<InputEncoding>UTF-8</InputEncoding>
+<Image width="32" height="32" type="image/png">data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAYFBMVEVGXUZLLy9QJCSAQ1esoKIXGSHYz8X+9+T26dbg3Nz+x7Tvu5/HtqjbsJLomH+7m4LVeHusgm+PhoTHaHi4Wm2QbFuoVmeeUWZwZWOUSFx/QlJPTU5iM0o3PT+EFUJRER97y7pWAAAAB3RSTlMLUqjS/f3+nCQScwAAAg5JREFUeNpdzeuOE1kMReG17VNVSeiIywxMA+//aqhBI9S3pJI6ZRspkSLR3+9tL9l7IBNjZdzBTeD2cJ9C/8V6nWyH5C/zs7kA/+ThlzncGPnTPBHoS4zDDwDuAdKArChZ9mfB1wgaJuMmxJkLNTwCj0JuCUViWbkFQFXu/87ZrJejIvpiYKluAHhhX86Jrz0dPKKrI8KMCiIAS4bBGEbchQ/DgGkcjxOQIfB3mFfZVK4KDBhMTDRhruoWoIwJxxIAsawvj6caRwQ0wNbJw0MF1+hp9VwSoxgMlK2hQ8JVjda3G29Nsega7U+HeAYFwGY7HL+/2Pi481wN3+HtgG82uISU/ff8ue7QZt5tTzQDcYKHhTQ79ed5zvEhaesy/cg9Tf+4xv46jsu7/FUO8NmAtYblqX+PaGD4yLJN7v9PwOIVXAxLDuGnhpNsw+HyQJWZkNgB0nqZcsQY7JeVAwVPpyjAZuplxT/kYTe39aRXIVmCyMhY1ixjExrTRnWKGkGkzbQCB6Luj6VJlAp9iGNxIXVoTthQRlNBQcYBrspKrCX3ZUK+SUCMUdwWLaEq1qn5andCFCRvVNEffbVxR/GGdJ101rR+FwDLm2MEkB3T+VsITG8LCPZL+PE4HbqLGG4lW0GAtbtlMSq/WX0sncWFbC0oGD5++nkM/zpvznf7YW9nqkoZmYAq9+8zX4o/mgczoZMedtoAAAAASUVORK5CYII=</Image>
+<Url type="text/html" method="get" template="https://mogu.holopirates.moe/">
+	<Param name="f" value="0"/>
+	<Param name="c" value="0_0"/>
+	<Param name="q" value="{searchTerms}"/>
+</Url>
+<Url type="application/opensearchdescription+xml" rel="self" template="https://mogu.holopirates.moe/static/search.xml"/>
+<moz:SearchForm>https://mogu.holopirates.moe/</moz:SearchForm>
+</OpenSearchDescription>

@@ -1,0 +1,10 @@
+@using Microsoft.Extensions.Options
+@using Mogu.Core.Entities
+@using Mogu.Core.Options
+@using Mogu.Web
+@using Mogu.Web.Infrastructure
+@using Mogu.Web.Pages
+@namespace Mogu.Web.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject CurrentUser CurrentUser
+@inject IOptionsSnapshot<MoguOptions> SiteOptions
