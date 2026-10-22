@@ -1,3 +1,4 @@
+using Mogu.Web.Services;
 using Mogu.Web.Tracker;
 
 namespace Mogu.Web.Infrastructure;
@@ -7,6 +8,9 @@ public static class ServiceRegistration
 {
     public static IServiceCollection AddMoguServices(this IServiceCollection services)
     {
+        services.AddMemoryCache();
+        services.AddScoped<ModerationService>();
+        services.AddScoped<TorrentFileListRenderer>();
         services.AddMoguTracker();
         return services;
     }

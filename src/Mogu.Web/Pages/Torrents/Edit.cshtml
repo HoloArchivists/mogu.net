@@ -1,0 +1,305 @@
+@page "/view/{id:int}/edit"
+@model Mogu.Web.Pages.Torrents.EditTorrentModel
+@using Mogu.Web.Services
+@{
+    var torrent = Model.Torrent;
+    var input = Model.Input;
+    var uploader = torrent.Uploader;
+    var user = CurrentUser.User!;
+    var torrentUrl = ModerationService.TorrentUrl(torrent.Id);
+    ViewData["Title"] = $"Edit {torrent.DisplayName} :: {SiteOptions.Value.SiteName}";
+
+    string GroupClass(string key) => ViewData.ModelState.ErrorsFor(key).Count > 0 ? "form-group has-error" : "form-group";
+    var displayNameErrors = ViewData.ModelState.ErrorsFor("display_name");
+    var categoryErrors = ViewData.ModelState.ErrorsFor("category");
+    var informationErrors = ViewData.ModelState.ErrorsFor("information");
+    var reasonErrors = ViewData.ModelState.ErrorsFor(EditTorrentModel.BanReasonKey);
+    var descriptionEditor = new MarkdownEditorModel("description", "Description", input.Description, ViewData.ModelState.ErrorsFor("description"));
+
+    // Button labels for the ban form, depending on what still needs doing.
+    string BanLabel(string target) => torrent.IsBanned ? $"Ban {target}"
+        : torrent.IsDeleted ? $"Ban and Ban {target}"
+        : $"Delete & Ban and Ban {target}";
+}
+<h1>
+	Edit Torrent <a href="@torrentUrl">#@torrent.Id</a>
+	@if (uploader is not null && uploader.Id != user.Id)
+	{
+	@:(by <a href="@ModerationService.UserUrl(uploader.Username)">@uploader.Username</a>)
+	}
+</h1>
+
+<form method="POST" enctype="multipart/form-data">
+	<div class="row">
+		<div class="col-md-6">
+		<div class="@GroupClass("display_name")">
+			<label class="control-label" for="display_name">Torrent display name</label>
+			<input class="form-control" id="display_name" name="display_name" placeholder="Display name" title="" type="text" value="@input.DisplayName">
+			<partial name="_FieldErrors" model="displayNameErrors" />
+		</div>
+		</div>
+		<div class="col-md-4">
+		<div class="@GroupClass("category")">
+			<label class="control-label" for="category">Category</label>
+			<select class="form-control" id="category" name="category" title="">
+				<option value="" selected="@string.IsNullOrEmpty(input.Category)">[Select a category]</option>
+				@foreach (var (code, _, label) in UrlHelpers.CategoryChoices)
+				{
+				<option value="@code" selected="@(input.Category == code)" disabled="@code.EndsWith("_0", StringComparison.Ordinal)">@label</option>
+				}
+			</select>
+			<partial name="_FieldErrors" model="categoryErrors" />
+		</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6">
+		<div class="@GroupClass("information")">
+			<label class="control-label" for="information">Information</label>
+			<input class="form-control" id="information" name="information" placeholder="Your website or IRC channel" title="" type="text" value="@input.Information">
+			<partial name="_FieldErrors" model="informationErrors" />
+		</div>
+		</div>
+		<div class="col-md-6">
+			<label class="control-label">Torrent flags</label><br>
+			<div class="btn-group" data-toggle="buttons">
+				@* Only allow changing anonymous status when an uploader exists *@
+				@if (torrent.UploaderId is not null)
+				{
+				<label class="btn btn-default @(input.IsAnonymous ? "active" : "")" title="Upload torrent anonymously (don't display your username)">
+					<input id="is_anonymous" name="is_anonymous" type="checkbox" value="true" checked="@input.IsAnonymous">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Anonymous
+				</label>
+				}
+				<label class="btn btn-grey @(input.IsHidden ? "active" : "")" title="Hide torrent from listing">
+					<input id="is_hidden" name="is_hidden" type="checkbox" value="true" checked="@input.IsHidden">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Hidden
+				</label>
+			</div>
+			<div class="hidden-xl"><br></div>
+			<div class="btn-group" data-toggle="buttons">
+				<label class="btn btn-danger @(input.IsRemake ? "active" : "")" title="This torrent is derived from another release">
+					<input id="is_remake" name="is_remake" type="checkbox" value="true" checked="@input.IsRemake">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Remake
+				</label>
+				<label class="btn btn-warning @(input.IsComplete ? "active" : "")" title="This torrent is a complete batch (eg. season)">
+					<input id="is_complete" name="is_complete" type="checkbox" value="true" checked="@input.IsComplete">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Complete
+				</label>
+				@if (user.IsTrusted)
+				{
+				<label class="btn btn-success @(input.IsTrusted ? "active" : "")" title="Mark torrent trusted">
+					<input id="is_trusted" name="is_trusted" type="checkbox" value="true" checked="@input.IsTrusted">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Trusted
+				</label>
+				}
+				@if (user.IsModerator)
+				{
+				<label class="btn btn-default @(input.IsCommentLocked ? "active" : "")" title="Lock comments">
+					<input id="is_comment_locked" name="is_comment_locked" type="checkbox" value="true" checked="@input.IsCommentLocked">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Lock Comments
+				</label>
+				}
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-12">
+			<partial name="_MarkdownEditor" model="descriptionEditor" />
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="form-group col-md-6">
+			<input class="btn btn-primary" id="submit" name="submit" type="submit" value="Save Changes">
+		</div>
+	</div>
+</form>
+<hr>
+
+<div class="row">
+	<div class="col-md-5">
+		<div class="panel panel-danger">
+			<div class="panel-heading">
+				<h3 class="panel-title">Danger Zone</h3>
+			</div>
+			<div class="panel-body">
+				<form method="POST">
+					<p>
+						@if (torrent.IsDeleted)
+						{
+						<text>This torrent is <strong>deleted</strong>@(torrent.IsBanned ? Html.Raw(" and <strong>banned</strong>") : null).<br></text>
+						}
+						@if (uploader is { IsBanned: true })
+						{
+						@:The uploader is <strong>banned</strong>.<br>
+						}
+						@if (Model.IpBanned)
+						{
+						@:The uploader is <strong>IP banned</strong>.<br>
+						}
+					</p>
+
+@if (!torrent.IsDeleted)
+{
+					<p class="lead">
+						Delete torrent.
+						<input asp-page-handler="Delete" class="btn btn-danger pull-right" id="delete" name="delete" type="submit" value="Delete">
+					</p>
+					<p>
+						Deleted torrents are retained for backup purposes.<br>
+						You (or someone else) will be able to reupload the torrent.
+					</p>
+
+					if (user.IsModerator)
+					{
+					<hr>
+					<p class="lead">
+						Delete and ban torrent.
+						<input asp-page-handler="Ban" class="btn btn-danger pull-right" id="ban" name="ban" type="submit" value="Delete &amp; Ban">
+					</p>
+					<p>
+						Soft deletes the torrent.<br>
+						Bans it from the tracker and disallows reuploading it.
+					</p>
+					}
+}
+else
+{
+					<p class="lead">
+						Undelete@(torrent.IsBanned ? " and unban" : "") torrent.
+						<input asp-page-handler="Undelete" class="btn btn-info pull-right" id="undelete" name="undelete" type="submit" value="@(torrent.IsBanned ? "Undelete & Unban" : "Undelete")">
+					</p>
+					<p>
+						Undeletes@(torrent.IsBanned ? " and unbans" : "") this torrent.
+					</p>
+
+					if (torrent.IsBanned)
+					{
+					<hr>
+					<p class="lead">
+						Unban torrent.
+						<input asp-page-handler="Unban" class="btn btn-info pull-right" id="unban" name="unban" type="submit" value="Unban">
+					</p>
+					<p>
+						Unbans torrent without undeleting it.<br>
+						Allows reuploading this torrent again.
+					</p>
+					}
+					else
+					{
+					<hr>
+					<p class="lead">
+						Ban torrent.
+						<input asp-page-handler="Ban" class="btn btn-danger pull-right" id="ban" name="ban" type="submit" value="Ban">
+					</p>
+					<p>
+						Bans it from the tracker and disallows reuploading it.
+					</p>
+					}
+}
+
+@if (Model.CanBanUploader && (uploader is { IsBanned: false } || !Model.IpBanned))
+{
+					<hr>
+					<p class="lead">
+					@if (torrent.IsDeleted)
+					{
+						if (torrent.IsBanned)
+						{
+						@:Ban uploader.
+						}
+						else
+						{
+						@:Ban torrent and ban uploader.
+						}
+					}
+					else
+					{
+						@:Delete and ban torrent and ban uploader.
+					}
+					</p>
+					<p>
+					@if (torrent.IsDeleted)
+					{
+						if (torrent.IsBanned)
+						{
+						@:Bans the uploader.
+						}
+						else
+						{
+						@:Bans it from the tracker and disallows reuploading it.<br>
+						@:Additionally bans the uploader.
+						}
+					}
+					else
+					{
+						@:Soft deletes the torrent.<br>
+						@:Bans it from the tracker and disallows reuploading it.<br>
+						@:Additionally bans the uploader.
+					}
+					</p>
+					<div class="@GroupClass(EditTorrentModel.BanReasonKey)">
+						<label class="control-label" for="reason">Ban Reason</label>
+						<textarea class="form-control" id="reason" name="reason" placeholder="Specify a ban reason." title="">@Model.BanReason</textarea>
+						<partial name="_FieldErrors" model="reasonErrors" />
+					</div><br>
+
+	if (uploader is not null)
+	{
+					<div class="pull-left">
+						@if (uploader.IsBanned)
+						{
+						<button type="button" class="btn btn-danger disabled">Already banned</button>
+						}
+						else
+						{
+						<input asp-page-handler="BanUser" class="btn btn-danger" id="ban_user" name="ban_user" type="submit" value="@BanLabel("User")">
+						}
+					</div>
+					<div class="pull-right">
+						@if (Model.IpBanned)
+						{
+						<button type="button" class="btn btn-danger disabled">Already IP banned</button>
+						}
+						else
+						{
+						<input asp-page-handler="BanUserIp" class="btn btn-danger" id="ban_userip" name="ban_userip" type="submit" value="@BanLabel("User+IP")">
+						}
+					</div>
+	}
+	else
+	{
+					<div class="pull-left">
+						<button type="button" class="btn btn-danger disabled">No user</button>
+					</div>
+					<div class="pull-right">
+						@if (Model.IpBanned)
+						{
+						<button type="button" class="btn btn-danger disabled">Already IP banned</button>
+						}
+						else
+						{
+						<input asp-page-handler="BanUserIp" class="btn btn-danger" id="ban_userip" name="ban_userip" type="submit" value="@BanLabel("IP")">
+						}
+					</div>
+	}
+}
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

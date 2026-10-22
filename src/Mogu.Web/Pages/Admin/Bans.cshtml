@@ -1,0 +1,61 @@
+@page "/admin/bans"
+@model Mogu.Web.Pages.Admin.BansModel
+@using Mogu.Web.Services
+@{
+    ViewData["Title"] = $"Admin Log :: {SiteOptions.Value.SiteName}";
+}
+	<div class="table-responsive">
+		<table class="table table-bordered table-hover table-striped">
+			<thead>
+			<tr>
+				<th style="width: 75px">#</th>
+				<th>Moderator/Admin</th>
+				<th>User</th>
+				<th>User IP</th>
+				<th style="width: 700px">Reason</th>
+				<th style="width: 175px">Date</th>
+				<th style="width: 75px">Action</th>
+			</tr>
+			</thead>
+			<tbody>
+			<form method="POST">
+				@foreach (var ban in Model.Bans.Items)
+				{
+				<tr>
+					<td>@ban.Id</td>
+					<td>
+						<a href="@ModerationService.UserUrl(ban.Admin.Username)">@ban.Admin.Username</a>
+					</td>
+					@if (ban.User is not null)
+					{
+					<td>
+						<a href="@ModerationService.UserUrl(ban.User.Username)">@ban.User.Username</a>
+					</td>
+					}
+					else
+					{
+					<td>-</td>
+					}
+					@if (CurrentUser.IsAdministrator)
+					{
+					<td>@ban.UserIp</td>
+					}
+					else
+					{
+					<td>hidden</td>
+					}
+					<td><div markdown-text-inline>@ban.Reason</div></td>
+					<td class="center">@AdminPaging.Timestamp(ban.CreatedAt)</td>
+					<td class="center">
+						<button class="btn btn-danger btn-xs" id="submit" name="submit" type="submit" value="@ban.Id">Unban</button>
+					</td>
+				</tr>
+				}
+			</form>
+			</tbody>
+		</table>
+	</div>
+
+	<div class=pagination>
+		<partial name="_Pagination" model="Model.Bans" />
+	</div>

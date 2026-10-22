@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.WebEncoders;
 using Microsoft.EntityFrameworkCore;
 using Mogu.Core.Data;
 using Mogu.Core.Options;
@@ -41,6 +44,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     // Mogu runs behind nginx on the same host; loopback proxies are trusted by default.
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
+
+// Emit non-ASCII text (Japanese titles etc.) as-is instead of &#x...; entities. Still HTML-encoded.
+builder.Services.Configure<WebEncoderOptions>(options =>
+    options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOutputCache();

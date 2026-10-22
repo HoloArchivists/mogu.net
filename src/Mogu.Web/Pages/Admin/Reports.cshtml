@@ -1,0 +1,86 @@
+@page "/admin/reports"
+@model Mogu.Web.Pages.Admin.ReportsModel
+@using Mogu.Web.Services
+@{
+    ViewData["Title"] = $"Reports :: {SiteOptions.Value.SiteName}";
+}
+	<div class="table">
+		<table class="table table-bordered table-hover table-striped table-condensed">
+			<thead>
+			<tr>
+				<th>#</th>
+				<th>Reported by</th>
+				<th>Torrent</th>
+				<th>Reason</th>
+				<th>Date</th>
+				<th>Action</th>
+			</tr>
+			</thead>
+			<tbody>
+			@foreach (var report in Model.Reports.Items)
+			{
+				var torrent = report.Torrent;
+				var uploader = torrent.Uploader;
+			<tr class="reports-row">
+				<td>@report.Id</td>
+				<td>
+					@if (report.User is not null)
+					{
+					<a href="@ModerationService.UserUrl(report.User.Username)">@report.User.Username</a>
+					@if (report.User.IsTrusted)
+					{
+					<span class="label label-success pull-right">Trusted</span>
+					}
+					}
+					else
+					{
+					@:-
+					}
+				</td>
+				<td>
+					<a href="@ModerationService.TorrentUrl(torrent.Id)">@torrent.DisplayName</a>
+					@if (uploader is not null)
+					{
+					@:by <a href="@ModerationService.UserUrl(uploader.Username)">@uploader.Username</a>
+					}
+					else
+					{
+					@:by Anonymous
+					}
+					@if (CurrentUser.IsAdministrator && !string.IsNullOrEmpty(torrent.UploaderIp))
+					{
+					@:(@torrent.UploaderIp)
+					}
+					@if (uploader is { IsTrusted: true })
+					{
+					<span class="label label-success pull-right">Trusted</span>
+					}
+				</td>
+				<td>@report.Reason</td>
+				<td>@AdminPaging.Timestamp(report.CreatedAt)</td>
+				<td class="report-action-column">
+					<form method="post">
+						<input id="torrent" name="torrent" type="hidden" value="@torrent.Id">
+						<input id="report" name="report" type="hidden" value="@report.Id">
+						<div class="input-group input-group-sm">
+							<select class="form-control" id="action" name="action">
+								@foreach (var (value, label) in ReportsModel.Actions)
+								{
+								<option value="@value">@label</option>
+								}
+							</select>
+							<div class="input-group-btn">
+								<button type="submit" class="btn btn-primary">Review</button>
+							</div>
+						</div>
+					</form>
+				</td>
+			</tr>
+			}
+			</tbody>
+		</table>
+	</div>
+
+	<div class=pagination>
+		<partial name="_Pagination" model="Model.Reports" />
+	</div>
