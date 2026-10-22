@@ -100,6 +100,7 @@ Everything is in `src/Mogu.Web/appsettings.json`; override with environment vari
    # http {} block; keep the list in sync with https://www.cloudflare.com/ips/
    set_real_ip_from 173.245.48.0/20;
    # ... one line per Cloudflare IPv4/IPv6 range ...
+   # plus any relay between Cloudflare and this host, e.g. set_real_ip_from <relay ip>;
    real_ip_header CF-Connecting-IP;
 
    # location / {}
