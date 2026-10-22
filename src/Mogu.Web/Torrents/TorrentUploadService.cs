@@ -52,6 +52,7 @@ public sealed partial class TorrentUploadService(
     DataPaths paths,
     TimeProvider time,
     IOptionsSnapshot<MoguOptions> options,
+    TorrentLinks links,
     ILogger<TorrentUploadService> logger)
 {
     private MoguOptions Settings => options.Value;
@@ -197,7 +198,7 @@ public sealed partial class TorrentUploadService(
             return (null, null);
         }
 
-        if (metadata.CheckTrackerPolicy(Settings.MainAnnounceUrl, Settings.EnforceMainAnnounceUrl) is { } trackerError)
+        if (metadata.CheckTrackerPolicy(links.MainAnnounceUrl, Settings.EnforceMainAnnounceUrl) is { } trackerError)
         {
             errors.Add(UploadFields.TorrentFile, trackerError);
             return (null, null);
@@ -316,7 +317,9 @@ public sealed partial class TorrentUploadService(
     /// <summary>Links the torrent's announce URLs and web seeds, creating <see cref="Tracker"/> rows as needed.</summary>
     private async Task AttachTrackersAsync(Torrent torrent, TorrentMetadata metadata, CancellationToken cancellationToken)
     {
-        var uris = metadata.Trackers.Concat(metadata.WebSeeds).Distinct(StringComparer.Ordinal).ToList();
+        // Dead trackers are dropped from uploads entirely.
+        var announces = metadata.Trackers.Where(t => !Settings.IsBlacklistedTracker(t)).ToList();
+        var uris = announces.Concat(metadata.WebSeeds).Distinct(StringComparer.Ordinal).ToList();
         var known = new Dictionary<string, Tracker>(StringComparer.OrdinalIgnoreCase);
         if (uris.Count > 0)
         {
@@ -327,7 +330,7 @@ public sealed partial class TorrentUploadService(
         }
 
         var linked = new List<Tracker>();
-        foreach (var uri in metadata.Trackers)
+        foreach (var uri in announces)
         {
             if (!known.TryGetValue(uri, out var tracker))
             {

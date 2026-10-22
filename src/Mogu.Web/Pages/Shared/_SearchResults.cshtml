@@ -1,3 +1,4 @@
+@inject TorrentLinks Links
 @* Torrent listing table, same markup as the old search_results.html. *@
 @using Mogu.Web.Services
 @model SearchResultsModel
@@ -69,7 +70,7 @@
 					{
 					<a href="/download/@(torrent.Id).torrent"><i class="fa fa-fw fa-download"></i></a>
 					}
-					<a href="@ListingMagnetBuilder.Create(torrent.DisplayName, torrent.InfoHashHex, site)"><i class="fa fa-fw fa-magnet"></i></a>
+					<a href="@Links.Magnet(torrent.DisplayName, torrent.InfoHashHex)"><i class="fa fa-fw fa-magnet"></i></a>
 				</td>
 				<td class="text-center">@Format.FileSize(torrent.FileSize)</td>
 				<td class="text-center" data-timestamp="@Format.UnixSeconds(torrent.CreatedAt)">@Format.Minutes(torrent.CreatedAt)</td>

@@ -129,7 +129,7 @@ public sealed partial class BrowsingIntegrationTests : IDisposable
         StringAssert.Contains(html, "class=\"hdr-size sorting_desc text-center\"");
         StringAssert.Contains(html, "href=\"/?s=size&amp;o=asc\"");
         StringAssert.Contains(html, $"href=\"/download/{torrent.Id}.torrent\"");
-        StringAssert.Contains(html, "magnet:?xt=urn:btih:" + torrent.InfoHashHex + "&amp;dn=Pekora%20%3CKaraoke%3E&amp;tr=udp%3A%2F%2Ftracker.holopirates.moe");
+        StringAssert.Contains(html, "magnet:?xt=urn:btih:" + torrent.InfoHashHex + "&amp;dn=Pekora%20%3CKaraoke%3E&amp;tr=http%3A%2F%2Flocalhost%2Fannounce");
         StringAssert.Contains(html, "<title>Browse :: Mogu</title>");
     }
 

@@ -1,4 +1,5 @@
 @page "/upload"
+@inject TorrentLinks Links
 @model Mogu.Web.Pages.Torrents.UploadModel
 @using Mogu.Web.Torrents
 @{
@@ -28,7 +29,7 @@
 
 	@if (site.EnforceMainAnnounceUrl)
 	{
-	<p><strong>Important:</strong> Please include <kbd>@site.MainAnnounceUrl</kbd> in your trackers.</p>
+	<p><strong>Important:</strong> Please include <kbd>@Links.MainAnnounceUrl</kbd> in your trackers.</p>
 	}
 	<p><strong>Important:</strong> Make sure you have read <strong><a href="/rules">the rules</a></strong> before uploading!</p>
 	<br>

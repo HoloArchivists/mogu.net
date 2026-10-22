@@ -11,6 +11,7 @@ public static class ServiceRegistration
     public static IServiceCollection AddMoguServices(this IServiceCollection services)
     {
         services.AddMemoryCache();
+        services.AddHttpContextAccessor();
 
         // Torrent pipeline: magnet links, .torrent downloads, uploads and the API.
         services.AddSingleton<TorrentLinks>();

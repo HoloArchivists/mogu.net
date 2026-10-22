@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -39,7 +40,8 @@ public sealed class UploadServiceTests : IDisposable
         _time = new ManualTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var options = new StaticOptions<MoguOptions>(_options);
         _paths = new DataPaths(new TestEnvironment(_directory), options);
-        _service = new TorrentUploadService(_db, _paths, _time, options, NullLogger<TorrentUploadService>.Instance);
+        var links = new TorrentLinks(options, new StaticOptions<TrackerOptions>(new TrackerOptions()), new HttpContextAccessor());
+        _service = new TorrentUploadService(_db, _paths, _time, options, links, NullLogger<TorrentUploadService>.Instance);
     }
 
     [TestCleanup]
@@ -302,12 +304,16 @@ public sealed class UploadServiceTests : IDisposable
         public void Advance(TimeSpan by) => _now += by;
     }
 
-    private sealed class StaticOptions<T>(T value) : IOptionsSnapshot<T>
+    private sealed class StaticOptions<T>(T value) : IOptionsSnapshot<T>, IOptionsMonitor<T>
         where T : class
     {
         public T Value => value;
 
+        public T CurrentValue => value;
+
         public T Get(string? name) => value;
+
+        public IDisposable? OnChange(Action<T, string?> listener) => null;
     }
 
     private sealed class TestEnvironment(string root) : IWebHostEnvironment

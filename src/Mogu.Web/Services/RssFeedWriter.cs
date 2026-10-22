@@ -14,7 +14,7 @@ public static class RssFeedWriter
 
     /// <param name="siteUrl">Absolute site root ending in <c>/</c>, e.g. <c>https://mogu.example/</c>.</param>
     /// <param name="label">Feed label, "Home" for database listings.</param>
-    public static byte[] Write(IEnumerable<TorrentRow> torrents, MoguOptions options, string siteUrl, string label, bool magnetLinks)
+    public static byte[] Write(IEnumerable<TorrentRow> torrents, MoguOptions options, TorrentLinks links, string siteUrl, string label, bool magnetLinks)
     {
         var nyaaNamespace = siteUrl + "xmlns/nyaa";
         using var stream = new MemoryStream();
@@ -56,7 +56,7 @@ public static class RssFeedWriter
                 Element(xml, "title", torrent.DisplayName);
                 Element(xml, "link", torrent.HasTorrent && !magnetLinks
                     ? siteUrl + "download/" + id + ".torrent"
-                    : ListingMagnetBuilder.Create(torrent.DisplayName, torrent.InfoHashHex, options));
+                    : links.Magnet(torrent.DisplayName, torrent.InfoHashHex));
                 xml.WriteStartElement("guid");
                 xml.WriteAttributeString("isPermaLink", "true");
                 xml.WriteString(viewUrl);

@@ -10,7 +10,7 @@ using Mogu.Web.Services;
 namespace Mogu.Web.Pages;
 
 /// <summary>Front page listing and search (old <c>main.home</c>), also served as RSS at <c>/rss</c> or <c>?page=rss</c>.</summary>
-public sealed partial class IndexModel(MoguDbContext db, TorrentSearch search, IOptionsSnapshot<MoguOptions> options) : MoguPageModel
+public sealed partial class IndexModel(MoguDbContext db, TorrentSearch search, IOptionsSnapshot<MoguOptions> options, TorrentLinks links) : MoguPageModel
 {
     public const string HashRedirectMessage = "You were redirected here because the given hash matched this torrent.";
 
@@ -64,7 +64,7 @@ public sealed partial class IndexModel(MoguDbContext db, TorrentSearch search, I
 
         if (rss)
         {
-            var xml = RssFeedWriter.Write(result.Torrents.Items, options.Value, Request.AbsoluteUrl("/"), "Home", listing.MagnetLinks);
+            var xml = RssFeedWriter.Write(result.Torrents.Items, options.Value, links, Request.AbsoluteUrl("/"), "Home", listing.MagnetLinks);
             Response.Headers.CacheControl = "max-age=300";
             return File(xml, "application/xml");
         }

@@ -9,7 +9,7 @@ using Mogu.Web.Infrastructure;
 namespace Mogu.Web.Torrents;
 
 /// <summary>Builds .torrent files from stored info dicts.</summary>
-public sealed class TorrentFileService(DataPaths paths, IOptionsSnapshot<MoguOptions> options)
+public sealed class TorrentFileService(DataPaths paths, TorrentLinks links)
 {
     /// <summary>
     /// The .torrent for <paramref name="torrent"/>, whose <see cref="Torrent.Trackers"/> (with
@@ -25,12 +25,11 @@ public sealed class TorrentFileService(DataPaths paths, IOptionsSnapshot<MoguOpt
 
         var info = await File.ReadAllBytesAsync(path, cancellationToken);
         var own = torrent.Trackers.OrderBy(t => t.Order).Select(t => t.Tracker).ToList();
-        var settings = options.Value;
         var metadata = new TorrentFileMetadata(
             torrent.CreatedAt,
             torrentPageUrl,
             torrent.Encoding,
-            TrackerLists.Combine(settings.MainAnnounceUrl, own.Where(t => !t.IsWebSeed).Select(t => t.Uri), settings.DefaultTrackers),
+            links.TrackersFor(own.Where(t => !t.IsWebSeed).Select(t => t.Uri)),
             own.Where(t => t.IsWebSeed).Select(t => t.Uri).Distinct(StringComparer.Ordinal).ToList());
         return TorrentFileBuilder.Build(info, metadata);
     }
