@@ -1,0 +1,29 @@
+@* Write/Preview markdown editor (old render_markdown_editor macro). main.js renders the preview with markdown-it. *@
+@model Mogu.Web.Infrastructure.MarkdownEditorModel
+<div class="form-group@(Model.Errors.Count > 0 ? " has-error" : "")">
+	<div class="markdown-editor" id="@(Model.Name)-markdown-editor" data-field-name="@Model.Name">
+		<label class="control-label" for="@Model.Name">@Model.Label</label>
+		<a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet" class="small" target="_blank">Markdown supported</a>
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active">
+				<a href="#@(Model.Name)-tab" role="tab" data-toggle="tab">
+					Write
+				</a>
+			</li>
+			<li role="presentation">
+				<a href="#@(Model.Name)-preview" id="@(Model.Name)-preview-tab" role="tab" data-toggle="tab">
+					Preview
+				</a>
+			</li>
+		</ul>
+		<div class="tab-content">
+			<div role="tabpanel" class="tab-pane active" id="@(Model.Name)-tab" data-markdown-target="#@(Model.Name)-markdown-target">
+				<textarea class="form-control markdown-source" id="@Model.Name" name="@Model.Name">@Model.Value</textarea>
+				<partial name="_FieldErrors" model="Model.Errors" />
+			</div>
+			<div role="tabpanel" class="tab-pane" id="@(Model.Name)-preview">
+				<div class="well" id="@(Model.Name)-markdown-target"></div>
+			</div>
+		</div>
+	</div>
+</div>

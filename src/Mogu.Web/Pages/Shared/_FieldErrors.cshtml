@@ -1,0 +1,17 @@
+@* Bootstrap help-block for a field's validation errors (old render_field macro). *@
+@model IReadOnlyList<string>
+@if (Model.Count == 1)
+{
+<div class="help-block">@Model[0]</div>
+}
+else if (Model.Count > 1)
+{
+<div class="help-block">
+	<ul>
+		@foreach (var error in Model)
+		{
+		<li>@error</li>
+		}
+	</ul>
+</div>
+}

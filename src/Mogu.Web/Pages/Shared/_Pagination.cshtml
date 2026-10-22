@@ -1,0 +1,40 @@
+@* Bootstrap 3 pagination, same markup as the old bootstrap/pagination.html macro. Links keep the current query and set ?p=. *@
+@model Mogu.Web.Infrastructure.IPageInfo
+<nav>
+  <ul class="pagination">
+    @if (Model.HasPrevious)
+    {
+    <li><a rel="prev" href="@Context.Request.WithPage(Model.Page - 1)">&laquo;</a></li>
+    }
+    else
+    {
+    <li class="disabled"><a href="#">&laquo;</a></li>
+    }
+    @foreach (var number in Model.PageLinks())
+    {
+      if (number is int n)
+      {
+        if (n != Model.Page)
+        {
+        <li><a href="@Context.Request.WithPage(n)">@n</a></li>
+        }
+        else
+        {
+        <li class="active"><a href="#">@n <span class="sr-only">(current)</span></a></li>
+        }
+      }
+      else
+      {
+      <li class="disabled"><a href="#">…</a></li>
+      }
+    }
+    @if (Model.HasNext)
+    {
+    <li><a rel="next" href="@Context.Request.WithPage(Model.Page + 1)">&raquo;</a></li>
+    }
+    else
+    {
+    <li class="disabled"><a href="#">&raquo;</a></li>
+    }
+  </ul>
+</nav>

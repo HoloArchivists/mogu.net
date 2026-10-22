@@ -1,7 +1,7 @@
 namespace Mogu.Web.Infrastructure;
 
 /// <summary>One page of results plus what <c>_Pagination.cshtml</c> needs to render page links.</summary>
-public sealed class PagedList<T>(IReadOnlyList<T> items, int page, int pageSize, int totalCount)
+public sealed class PagedList<T>(IReadOnlyList<T> items, int page, int pageSize, int totalCount) : IPageInfo
 {
     public IReadOnlyList<T> Items { get; } = items;
 
