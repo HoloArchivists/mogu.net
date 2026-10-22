@@ -1,0 +1,184 @@
+@page "/upload"
+@model Mogu.Web.Pages.Torrents.UploadModel
+@using Mogu.Web.Torrents
+@{
+    var site = SiteOptions.Value;
+    ViewData["Title"] = $"Upload Torrent :: {site.SiteName}";
+    var user = CurrentUser.User;
+    var input = Model.Input;
+    IReadOnlyList<string> Errors(string field) => ViewData.ModelState.ErrorsFor(field);
+    string FormGroup(string field) => Errors(field).Count > 0 ? "form-group has-error" : "form-group";
+    string? Active(bool on) => on ? "active" : null;
+    var rateLimitErrors = Errors(UploadFields.RateLimit);
+    var rangeBannedErrors = Errors(UploadFields.RangeBanned);
+    var descriptionEditor = new MarkdownEditorModel(UploadFields.Description, "Description", input.Description, Errors(UploadFields.Description));
+}
+@section Metatags {
+<meta property="og:description" content="Upload a torrent to @site.SiteName">
+}
+
+<h1>Upload Torrent</h1>
+@if (user is null)
+{
+<p>You are not logged in, and are uploading anonymously.</p>
+}
+
+<div id="upload-drop-zone"><span>Drop here!</span></div>
+<form method="post" enctype="multipart/form-data">
+
+	@if (site.EnforceMainAnnounceUrl)
+	{
+	<p><strong>Important:</strong> Please include <kbd>@site.MainAnnounceUrl</kbd> in your trackers.</p>
+	}
+	<p><strong>Important:</strong> Make sure you have read <strong><a href="/rules">the rules</a></strong> before uploading!</p>
+	<br>
+
+	@if (Model.ShowRateLimit)
+	{
+	var rateLimitClass = rateLimitErrors.Count > 0 ? "danger" : "warning";
+	var nextUpload = Model.RateLimit?.NextAllowed;
+	<div class="row">
+		<div class="col-md-12">
+			<div class="alert alert-@rateLimitClass" role="alert">
+				<div>You've reached your maximum upload rate (@site.MaxUploadBurst per @((int)site.UploadBurstDuration.TotalMinutes) minutes, you have <b>@Model.RateLimit?.Count</b>) and will now have to wait @((int)site.UploadTimeout.TotalMinutes) minutes between uploads.</div>
+				@if (nextUpload is { } next)
+				{
+				<div>You may upload again at <b data-timestamp="@Format.UnixSeconds(next)">@Format.MinutesUtc(next)</b>.</div>
+				}
+				else
+				{
+				<div>You may upload again now.</div>
+				}
+			</div>
+		</div>
+	</div>
+	}
+
+	@if (rangeBannedErrors.Count > 0)
+	{
+	<div class="row">
+		<div class="col-md-12">
+			<div class="alert alert-danger" role="alert">
+				@foreach (var error in rangeBannedErrors)
+				{
+				<p>@error</p>
+				}
+			</div>
+		</div>
+	</div>
+	}
+
+	<div class="row">
+		<div class="col-md-12">
+		<div class="@FormGroup(UploadFields.TorrentFile)">
+			<label class="control-label" for="torrent_file">Torrent file</label>
+			<div class="input-group">
+				<label for="torrent_file" class="input-group-btn">
+					<span class="btn btn-default">Browse&hellip;</span>
+				</label>
+				<input type="text" class="form-control" readonly>
+			</div>
+			<div class="sr-only">
+				<input accept=".torrent" id="torrent_file" name="@UploadFields.TorrentFile" title="" type="file">
+			</div>
+			<partial name="_FieldErrors" model="Errors(UploadFields.TorrentFile)" />
+		</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6">
+		<div class="@FormGroup(UploadFields.DisplayName)">
+			<label class="control-label" for="display_name">Torrent display name (optional)</label>
+			<input class="form-control" id="display_name" name="@UploadFields.DisplayName" placeholder="Display name" title="" type="text" value="@input.DisplayName">
+			<partial name="_FieldErrors" model="Errors(UploadFields.DisplayName)" />
+		</div>
+		</div>
+		<div class="col-md-6">
+		<div class="@FormGroup(UploadFields.Category)">
+			<label class="control-label" for="category">Category</label>
+			<select class="form-control" id="category" name="@UploadFields.Category" title="">
+				<option value="" selected="@string.IsNullOrEmpty(input.Category)">[Select a category]</option>
+				@foreach (var category in Model.Categories)
+				{
+				<option disabled="@category.IsDisabled" selected="@(input.Category == category.Code)" value="@category.Code">@category.Label</option>
+				}
+			</select>
+			<partial name="_FieldErrors" model="Errors(UploadFields.Category)" />
+		</div>
+		</div>
+	</div>
+	<div class="row form-group">
+		<div class="col-md-6">
+			<div class="@FormGroup(UploadFields.Information)">
+				<label class="control-label" for="information">Information</label>
+				<input class="form-control" id="information" name="@UploadFields.Information" placeholder="Your website or IRC channel" title="" type="text" value="@input.Information">
+				<partial name="_FieldErrors" model="Errors(UploadFields.Information)" />
+			</div>
+		</div>
+		<div class="col-md-6">
+			<label class="control-label">Torrent flags</label><br>
+
+			<div class="btn-group" data-toggle="buttons">
+				@if (user is null)
+				{
+				<label class="btn btn-default active disabled" title="Upload torrent anonymously (don't display your username)">
+					<input checked disabled id="is_anonymous" name="@UploadFields.IsAnonymous" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-ban-circle"></span>
+					Anonymous
+				</label>
+				}
+				else
+				{
+				<label class="btn btn-default @Active(input.IsAnonymous)" title="Upload torrent anonymously (don't display your username)">
+					<input checked="@input.IsAnonymous" id="is_anonymous" name="@UploadFields.IsAnonymous" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Anonymous
+				</label>
+				}
+				<label class="btn btn-grey @Active(input.IsHidden)" title="Hide torrent from listing">
+					<input checked="@input.IsHidden" id="is_hidden" name="@UploadFields.IsHidden" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Hidden
+				</label>
+			</div>
+			<div class="hidden-xl hidden-lg"><br></div>
+			<div class="btn-group" data-toggle="buttons">
+				<label class="btn btn-danger @Active(input.IsRemake)" title="This torrent is derived from another release">
+					<input checked="@input.IsRemake" id="is_remake" name="@UploadFields.IsRemake" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Remake
+				</label>
+				<label class="btn btn-warning @Active(input.IsComplete)" title="This torrent is a complete batch (eg. season)">
+					<input checked="@input.IsComplete" id="is_complete" name="@UploadFields.IsComplete" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Complete
+				</label>
+				@if (CurrentUser.IsTrusted)
+				{
+				<label class="btn btn-success @Active(input.IsTrusted)" title="Mark torrent trusted">
+					<input checked="@input.IsTrusted" id="is_trusted" name="@UploadFields.IsTrusted" type="checkbox" value="true">
+					<span class="glyphicon glyphicon-check"></span>
+					<span class="glyphicon glyphicon-unchecked"></span>
+					Trusted
+				</label>
+				}
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<partial name="_MarkdownEditor" model="descriptionEditor" />
+		</div>
+	</div>
+
+	<br>
+	<div class="row">
+		<div class="form-group col-md-6">
+			<input type="submit" value="Upload" class="btn btn-primary">
+		</div>
+	</div>
+</form>
