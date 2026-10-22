@@ -1,0 +1,272 @@
+@page "/view/{id:int}"
+@model Mogu.Web.Pages.Torrents.ViewTorrentModel
+@using Mogu.Web.Services
+@{
+    var torrent = Model.Torrent;
+    var site = SiteOptions.Value;
+    var user = CurrentUser.User;
+    var uploader = torrent.Uploader;
+    var uploaderName = uploader is not null && !torrent.IsAnonymous ? uploader.Username : "Anonymous";
+    var panelClass = torrent.IsDeleted ? "deleted" : torrent.IsRemake ? "danger" : torrent.IsTrusted ? "success" : "default";
+    var hideComments = user?.HideComments == true;
+    var commentErrors = ViewData.ModelState.ErrorsFor("comment");
+    var reasonErrors = ViewData.ModelState.ErrorsFor("reason");
+    string Stat(int value) => site.EnableShowStats ? value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Coming soon";
+    var description = string.IsNullOrEmpty(torrent.Description)
+        ? new Microsoft.AspNetCore.Html.HtmlString("#### No description.")
+        : TorrentHtml.EscapeMultiline(torrent.Description);
+    ViewData["Title"] = $"{torrent.DisplayName} :: {site.SiteName}";
+}
+@section Metatags {
+<meta property="og:description" content="@UrlHelpers.CategoryName(torrent.CategoryCode) | @Format.FileSize(torrent.FileSize) | Uploaded by @uploaderName on @torrent.CreatedAt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
+}
+<div class="panel panel-@panelClass">
+	<div class="panel-heading" style="@(torrent.IsHidden ? "background-color: darkgray;" : null)">
+		<h3 class="panel-title">
+			@if (Model.CanEdit)
+			{
+			<a href="/view/@torrent.Id/edit" title="Edit torrent"><i class="fa fa-fw fa-pencil"></i></a>
+			}
+			@torrent.DisplayName
+		</h3>
+	</div>
+	<div class="panel-body">
+		<div class="row">
+			<div class="col-md-1">Category:</div>
+			<div class="col-md-5">
+				<a href="/?c=@torrent.MainCategory.Code">@torrent.MainCategory.Name</a> - <a href="/?c=@torrent.SubCategory.Code">@torrent.SubCategory.Name</a>
+			</div>
+
+			<div class="col-md-1">Date:</div>
+			<div class="col-md-5" data-timestamp="@Format.UnixSeconds(torrent.CreatedAt)">@Format.MinutesUtc(torrent.CreatedAt)</div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-1">Submitter:</div>
+			<div class="col-md-5">
+				@if (!torrent.IsAnonymous && uploader is not null)
+				{
+				<a class="text-@uploader.LevelColor" href="@ModerationService.UserUrl(uploader.Username)" data-toggle="tooltip" title="@uploader.LevelTitle">@uploader.Username</a>
+				}
+				else
+				{
+				@:Anonymous
+				if (uploader is not null && (user?.Id == uploader.Id || CurrentUser.IsModerator))
+				{
+				@:(<a class="text-@uploader.LevelColor" href="@ModerationService.UserUrl(uploader.Username)" data-toggle="tooltip" title="@uploader.LevelTitle">@uploader.Username</a>)
+				}
+				}
+				@if (CurrentUser.IsAdministrator && !string.IsNullOrEmpty(torrent.UploaderIp))
+				{
+				@:(@torrent.UploaderIp)
+				}
+			</div>
+
+			<div class="col-md-1">Seeders:</div>
+			<div class="col-md-5"><span style="color: green;">@Stat(torrent.SeedCount)</span></div>
+
+		</div>
+
+		<div class="row">
+			<div class="col-md-1">Information:</div>
+			<div class="col-md-5">
+				@if (!string.IsNullOrEmpty(torrent.Information))
+				{
+				@TorrentHtml.InformationAsLink(torrent.Information)
+				}
+				else
+				{
+				@:No information.
+				}
+			</div>
+
+			<div class="col-md-1">Leechers:</div>
+			<div class="col-md-5"><span style="color: red;">@Stat(torrent.LeechCount)</span></div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-1">File size:</div>
+			<div class="col-md-5">@Format.FileSize(torrent.FileSize)</div>
+
+			<div class="col-md-1">Completed:</div>
+			<div class="col-md-5">@Stat(torrent.DownloadCount)</div>
+		</div>
+		<div class="row">
+			<div class="col-md-offset-6 col-md-1">Info hash:</div>
+			<div class="col-md-5"><kbd>@torrent.InfoHashHex</kbd></div>
+		</div>
+	</div><!--/.panel-body -->
+
+	<div class="panel-footer clearfix">
+		@if (torrent.HasTorrent)
+		{
+		<text><a href="/download/@(torrent.Id).torrent"><i class="fa fa-download fa-fw"></i>Download Torrent</a> or </text>
+		}
+		@* /view/{id}/magnet redirects to the magnet URI (built by the download/magnet work package). *@
+		<a href="/view/@torrent.Id/magnet" class="card-footer-item"><i class="fa fa-magnet fa-fw"></i>Magnet</a>
+		@if (Model.CanReport)
+		{
+		<button type="button" class="btn btn-xs btn-danger pull-right" data-toggle="modal" data-target="#reportModal">
+			Report
+		</button>
+		}
+	</div>
+</div><!--/.panel -->
+
+<div class="panel panel-default">
+	<div markdown-text class="panel-body" id="torrent-description">@description</div>
+</div>
+
+@Model.FileList
+
+<div id="comments" class="panel panel-default">
+	<div class="panel-heading">
+		<a data-toggle="collapse" href="#collapse-comments" role="button" aria-expanded="@(hideComments ? "false" : "true")" aria-controls="collapse-comments">
+		<h3 class="panel-title">
+			Comments - @torrent.CommentCount
+		</h3>
+		</a>
+	</div>
+	<div class="collapse @(hideComments ? "" : "in")" id="collapse-comments">
+	@foreach (var item in Model.Comments)
+	{
+		var comment = item.Comment;
+		var author = comment.User;
+	<div class="panel panel-default comment-panel" id="com-@item.Number">
+		<div class="panel-body">
+			<div class="col-md-2">
+				<p>
+					<a class="text-@author.LevelColor" href="@ModerationService.UserUrl(author.Username)" data-toggle="tooltip" title="@author.LevelTitle">@author.Username</a>
+					@if (author.Id == torrent.UploaderId && !torrent.IsAnonymous)
+					{
+					@:(uploader)
+					}
+				</p>
+				<img class="avatar" src="/static/img/avatar/default.png" alt="@author.LevelTitle">
+			</div>
+			<div class="col-md-10 comment">
+				<div class="row comment-details">
+					<a href="#com-@item.Number"><small data-timestamp-swap data-timestamp="@Format.UnixSeconds(comment.CreatedAt)">@Format.MinutesUtc(comment.CreatedAt)</small></a>
+					@if (comment.EditedAt is { } editedAt)
+					{
+					<small data-timestamp-swap data-timestamp-title data-timestamp="@Format.UnixSeconds(editedAt)" title="@editedAt.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)">(edited)</small>
+					}
+					<div class="comment-actions">
+						@if (item.ShowEdit && item.EditableUntil is { } until)
+						{
+						<button class="btn btn-xs edit-comment" title="Edit" data-until="@until">Edit</button>
+						}
+						else if (item.ShowEdit)
+						{
+						<button class="btn btn-xs edit-comment" title="Edit">Edit</button>
+						}
+						@if (item.ShowDelete)
+						{
+						<form class="delete-comment-form" action="/view/@torrent.Id/comment/@comment.Id/delete" method="POST" asp-antiforgery="true">
+							<button name="submit" type="submit" class="btn btn-danger btn-xs" title="Delete">Delete</button>
+						</form>
+						}
+					</div>
+				</div>
+				<div class="row comment-body">
+					@* Newlines are escaped into HTML entities because Cloudflare strips blank lines. *@
+					<div markdown-text class="comment-content" id="torrent-comment@(comment.Id)">@TorrentHtml.EscapeMultiline(comment.Text)</div>
+					@if (item.ShowEditBox)
+					{
+					<form class="edit-comment-box" action="/view/@torrent.Id/comment/@comment.Id/edit" method="POST" asp-antiforgery="true">
+						<div class="form-group">
+							<textarea class="form-control" name="comment" autofocus>@TorrentHtml.EscapeMultiline(comment.Text)</textarea>
+						</div>
+						<input type="submit" value="Submit" class="btn btn-success btn-sm">
+						<button class="btn btn-sm edit-comment" title="Cancel">Cancel</button>
+						<span class="edit-error text-danger"></span>
+						<div class="edit-waiting" style="display:none"></div>
+					</form>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	}
+	@if (torrent.IsCommentLocked)
+	{
+	<div class="alert alert-warning">
+		<p>
+			<i class="fa fa-lock" aria-hidden="true"></i>
+			Comments have been locked.
+		</p>
+	</div>
+	}
+	@if (Model.CanComment)
+	{
+	<form class="comment-box" method="POST">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="form-group@(commentErrors.Count > 0 ? " has-error" : "")">
+					<label class="control-label" for="comment">Make a comment</label>
+					<textarea class="form-control" id="comment" name="comment" title="">@Model.CommentText</textarea>
+					<partial name="_FieldErrors" model="commentErrors" />
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<input type="submit" value="Submit" class="btn btn-success btn-sm">
+			</div>
+		</div>
+	</form>
+	}
+	</div>
+</div>
+
+@if (Model.CanReport)
+{
+<div class="modal fade" id="reportModal" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+						aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Report torrent #@torrent.Id</h4>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-warning" role="alert">
+					Before submitting a report, please check that the torrent
+					actually breaks <a href="/rules">the
+					rules</a>. Useless reports like "download is slow" or
+					"thanks" can get you banned from the site.
+				</div>
+				<form method="POST" action="/view/@torrent.Id/submit_report" asp-antiforgery="true">
+					<div class="form-group@(reasonErrors.Count > 0 ? " has-error" : "")">
+						<label class="control-label" for="reason">Report reason</label>
+						<textarea class="form-control" id="reason" maxlength="255" name="reason" title=""></textarea>
+						<partial name="_FieldErrors" model="reasonErrors" />
+					</div>
+					<div style="float: right;">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" id="reportSubmit" class="btn btn-danger">Report</button>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer" style="border-top: none;">
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	// Focus the report text field once the modal is opened.
+	$('#reportModal').on('shown.bs.modal', function () {
+		$('#reason').focus();
+		$('#reportSubmit').attr('disabled', true);
+	});
+	$('#reason').on('input', function(e) {
+		if($('#reason').val().length > 0) {
+			$('#reportSubmit').removeAttr('disabled');
+		} else {
+			$('#reportSubmit').attr('disabled', true);
+		}
+	});
+</script>
+}

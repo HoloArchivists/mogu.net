@@ -1,0 +1,35 @@
+@page "/admin/log"
+@model Mogu.Web.Pages.Admin.LogModel
+@using Mogu.Web.Services
+@{
+    ViewData["Title"] = $"Admin Log :: {SiteOptions.Value.SiteName}";
+}
+	<div class="table-responsive">
+		<table class="table table-bordered table-hover table-striped">
+			<thead>
+			<tr>
+				<th>#</th>
+				<th>Moderator/Admin</th>
+				<th>Log</th>
+				<th>Date</th>
+			</tr>
+			</thead>
+			<tbody>
+			@foreach (var log in Model.Entries.Items)
+			{
+			<tr>
+				<td>@log.Id</td>
+				<td>
+					<a href="@ModerationService.UserUrl(log.Admin.Username)">@log.Admin.Username</a>
+				</td>
+				<td><div markdown-text-inline>@Model.DisplayMessage(log)</div></td>
+				<td>@AdminPaging.Timestamp(log.CreatedAt)</td>
+			</tr>
+			}
+			</tbody>
+		</table>
+	</div>
+
+	<div class=pagination>
+		<partial name="_Pagination" model="Model.Entries" />
+	</div>
