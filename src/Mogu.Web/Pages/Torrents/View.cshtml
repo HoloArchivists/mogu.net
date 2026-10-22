@@ -1,6 +1,7 @@
 @page "/view/{id:int}"
 @model Mogu.Web.Pages.Torrents.ViewTorrentModel
 @using Mogu.Web.Services
+@inject TorrentLinks Links
 @{
     var torrent = Model.Torrent;
     var site = SiteOptions.Value;
@@ -102,8 +103,7 @@
 		{
 		<text><a href="/download/@(torrent.Id).torrent"><i class="fa fa-download fa-fw"></i>Download Torrent</a> or </text>
 		}
-		@* /view/{id}/magnet redirects to the magnet URI (built by the download/magnet work package). *@
-		<a href="/view/@torrent.Id/magnet" class="card-footer-item"><i class="fa fa-magnet fa-fw"></i>Magnet</a>
+		<a href="@Links.Magnet(torrent.DisplayName, torrent.InfoHashHex)" class="card-footer-item"><i class="fa fa-magnet fa-fw"></i>Magnet</a>
 		@if (Model.CanReport)
 		{
 		<button type="button" class="btn btn-xs btn-danger pull-right" data-toggle="modal" data-target="#reportModal">
