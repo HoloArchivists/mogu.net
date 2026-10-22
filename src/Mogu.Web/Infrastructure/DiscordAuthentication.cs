@@ -78,8 +78,7 @@ public static class DiscordAuthentication
         using var me = await GetJsonAsync(context, context.Options.UserInformationEndpoint);
         if (me is null)
         {
-            context.Fail("Failed to get user data from Discord.");
-            return;
+            throw new AuthenticationFailureException("Failed to get user data from Discord.");
         }
 
         var discordId = long.Parse(me.RootElement.GetProperty("id").GetString()!, System.Globalization.CultureInfo.InvariantCulture);
@@ -89,15 +88,13 @@ public static class DiscordAuthentication
         using var member = await GetJsonAsync(context, $"{ApiBase}users/@me/guilds/{discord.GuildId}/member");
         if (member is null)
         {
-            context.Fail("Please join the discord server in the Help page and try again.");
-            return;
+            throw new AuthenticationFailureException("Please join the discord server in the Help page and try again.");
         }
 
         var roles = member.RootElement.GetProperty("roles").EnumerateArray().Select(r => r.GetString()!).ToHashSet();
         if (!roles.Overlaps(discord.LoginRoles))
         {
-            context.Fail("You do not have the sufficient permissions to login. Contact an admin for more info.");
-            return;
+            throw new AuthenticationFailureException("You do not have the sufficient permissions to login. Contact an admin for more info.");
         }
 
         var level = roles.Overlaps(discord.AdminRoles) ? UserLevel.Administrator
@@ -125,8 +122,7 @@ public static class DiscordAuthentication
 
         if (user.IsBanned)
         {
-            context.Fail("Your account is banned.");
-            return;
+            throw new AuthenticationFailureException("Your account is banned.");
         }
 
         user.Status = UserStatus.Active;

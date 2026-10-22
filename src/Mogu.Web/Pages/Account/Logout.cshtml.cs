@@ -21,7 +21,8 @@ public sealed class LogoutModel : MoguPageModel
 
         if (Uri.TryCreate(Request.Headers.Referer.ToString(), UriKind.Absolute, out var referer)
             && referer.Authority == Request.Host.Value
-            && referer.PathAndQuery != "/logout")
+            && referer.PathAndQuery != "/logout"
+            && Url.IsLocalUrl(referer.PathAndQuery))
         {
             return referer.PathAndQuery;
         }

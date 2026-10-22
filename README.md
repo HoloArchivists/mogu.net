@@ -92,8 +92,23 @@ Everything is in `src/Mogu.Web/appsettings.json`; override with environment vari
    dict file is missing.
 3. The container runs as the non-root `app` user (uid 1654): `sudo chown -R 1654:1654 data`.
 4. `cp mogu.env.example mogu.env`, fill in the Discord settings, `docker compose up -d --build`.
-5. nginx keeps proxying to `127.0.0.1:5000`; make sure it sends `X-Forwarded-For` and
-   `X-Forwarded-Proto`, and that `/announce` and `/scrape` are proxied too.
+5. nginx keeps proxying to `127.0.0.1:5000` (including `/announce` and `/scrape`). The site is behind
+   Cloudflare, so nginx must restore the real client IP, otherwise IP bans, rate limits and the
+   tracker's peer lists all see Cloudflare edge addresses:
+
+   ```nginx
+   # http {} block; keep the list in sync with https://www.cloudflare.com/ips/
+   set_real_ip_from 173.245.48.0/20;
+   # ... one line per Cloudflare IPv4/IPv6 range ...
+   real_ip_header CF-Connecting-IP;
+
+   # location / {}
+   proxy_set_header X-Forwarded-For $remote_addr;
+   proxy_set_header X-Forwarded-Proto https;
+   ```
+
+   `X-Forwarded-Proto` matters for the Discord redirect URI. Set `ReverseProxy__KnownNetworks__0` if
+   nginx reaches the container from a docker network rather than loopback.
 
 ## License
 
