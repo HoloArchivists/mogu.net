@@ -94,3 +94,9 @@ Everything is in `src/Mogu.Web/appsettings.json`; override with environment vari
 4. `cp mogu.env.example mogu.env`, fill in the Discord settings, `docker compose up -d --build`.
 5. nginx keeps proxying to `127.0.0.1:5000`; make sure it sends `X-Forwarded-For` and
    `X-Forwarded-Proto`, and that `/announce` and `/scrape` are proxied too.
+
+## License
+
+GPL-3.0, see [LICENSE](LICENSE). Mogu.NET is a derivative of mogu and Nyaa (both GPL-3.0): the
+templates, stylesheets, scripts and static assets are carried over from them, and the backend is a
+port of their code.

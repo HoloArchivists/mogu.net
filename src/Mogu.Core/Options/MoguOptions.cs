@@ -89,7 +89,7 @@ public sealed class MoguOptions
     /// <summary>Commit shown in the footer; links to the source repository.</summary>
     public string? CommitHash { get; set; }
 
-    public string SourceRepositoryUrl { get; set; } = "https://github.com/HoloArchivists/mogu";
+    public string SourceRepositoryUrl { get; set; } = "https://github.com/HoloArchivists/mogu.net";
 
     /// <summary>Host of the work-safe site, named on the rules page (old <c>EXTERNAL_URLS['main']</c>).</summary>
     public string MainSiteHost { get; set; } = "mogu.holopirates.moe";
