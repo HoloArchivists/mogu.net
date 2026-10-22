@@ -487,3 +487,5 @@ src/Mogu.Web/data/
 *.db-shm
 *.db-wal
 .claude/worktrees/
+mogu.env
+/data/

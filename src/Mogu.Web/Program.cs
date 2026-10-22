@@ -41,8 +41,12 @@ builder.Services.AddDataProtection()
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    // Mogu runs behind nginx on the same host; loopback proxies are trusted by default.
+    // Loopback proxies are always trusted; add e.g. the docker bridge network via ReverseProxy:KnownNetworks.
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    foreach (var network in builder.Configuration.GetSection("ReverseProxy:KnownNetworks").Get<string[]>() ?? [])
+    {
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+    }
 });
 
 // Emit non-ASCII text (Japanese titles etc.) as-is instead of &#x...; entities. Still HTML-encoded.

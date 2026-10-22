@@ -1,0 +1,12 @@
+services:
+  mogu:
+    build:
+      context: .
+      args:
+        COMMIT_HASH: ${COMMIT_HASH:-}
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5000:8080
+    env_file: mogu.env
+    volumes:
+      - ./data:/data
